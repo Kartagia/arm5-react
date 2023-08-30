@@ -1,5 +1,9 @@
 import { modifier, multiplier } from './modules.rules.js';
 
+/**
+ * Shape and Material represents a modidier to mqgic.
+ * 
+ */
 export class ShapeAndMaterial {
   
   
@@ -21,12 +25,19 @@ export class ShapeAndMaterial {
   }
 }
 
+/**
+ * Shape lacks vis storing capqcity.
+ */
 export class Shape extends ShapeAndMaterial {
   constructor(name, ...modifiers) {
     super(name, ...modifiers);
   }
 }
 
+/**
+ * Material has vis storing capacity.
+ * 
+ */
 export class Material extends ShapeAndMaterial {
   constructor(name, baseCapacity=1, ...modifiers) {
     super(name, ...modifiers);

@@ -335,6 +335,7 @@ function parseJulianDate(str) {
     "(?<month>1?\\d)$")
   ].forEach(
     (pattern, index) => {
+      if (result) { return; }
       let match = pattern.exec(str);
       if (match) {
         result = {
@@ -343,7 +344,6 @@ function parseJulianDate(str) {
           year: match.groups.year,
           era: match.group.era || "AD"
         };
-        break;
       }
     }
     );
