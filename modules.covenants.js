@@ -89,7 +89,7 @@ export function updateCovenant(id, covenant) {
   }
 }
 
-export function removeCovenant(id) {
+export function deleteCovenant(id) {
   const index = covenants.findIndex( (c) => (c.id === id));
   if (index >= 0) {
     covenants.splice(index, 1);

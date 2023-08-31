@@ -4,14 +4,14 @@
  */
 export default class Covenant {
   
-  constructor({name, id=null, magi=[], companions=[], grogs=[],  options}) {
+  constructor({name, id=null, magi=[], companions=[], grogs=[],  ...options}) {
     this.name = name;
     this.tribunal = options.tribunal;
     this.id = id;
     this.magi = [...magi];
     this.companions = [...companions];
     this.grogs = [...grogs];
-    this.people = optional.peopleRegistry;
+    this.people = options.peopleRegistry;
     
     //TODO: Library support
     //TODO: Resources support
