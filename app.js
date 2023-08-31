@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Covenant from './Covenant.jsx';
-import History from './History.jsx';
-import {getCovenants} from './modules.covenants.js';
+import Covenants from './CovenanListCompoment.jsx';
+import{CovenantDAO} from "./modules.covenants.js";
+
 
 
 
@@ -25,27 +25,29 @@ class Paragraph extends React.Component {
 class Main extends React.Component {
   constructor (props) {
     super(props);
+    this.dao = new CovenantDAO();
+    console.log("Covenant DAO: ", this.dao);
+    dao.create(
+      "Fengheld",
+      "Rhine"
+    );
+    dao.create({
+      name: "Jaferia",
+      tribunal: "Iberia"
+    });
+    
+    
     this.state = {
-      covenants: getCovenants()
+      covenants: dao.all()
     };
+    console.log("Created Main")
   }
 
   render() {
     return  (
       <div className="">
         <Title label={this.props.title} />
-          <Paragraph text={this.props.text} />
-          {
-            this.state.covenants.map(
-              covenant => {
-                
-                return (
-                  <Covenant key={covenant.id || covenant.name} covenant={covenant}  ><section className={"history"}> <article className={"entry"} ><h6>Founding</h6></article></section>
-                  </Covenant>
-                );
-              }
-            )
-          }
+        <Covenants entries={this.state.covenants}  />
       </div>
     )
   }

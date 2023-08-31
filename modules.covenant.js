@@ -15,6 +15,7 @@ export default class Covenant {
     
     //TODO: Library support
     //TODO: Resources support
+    console.log(`Created covenant ${this.name}`);
   }
   
   toJSON(key="") {
@@ -72,5 +73,9 @@ export default class Covenant {
       
       return new Covenant(value);
     }
+  }
+  
+  toString() {
+    return `${this.name}(${this.magi.length} members)`;
   }
 }

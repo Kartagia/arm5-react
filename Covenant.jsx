@@ -5,10 +5,6 @@ import { getTribunals } from './arm5.js';
 import { getArts } from './modules.art.js';
 import History from "./History.jsx";
 
-export function Covenant(props) {
-  
-}
-
 
 export default function Covenant(props) {
   const covenant = props.covenant;

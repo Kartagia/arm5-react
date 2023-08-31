@@ -4,7 +4,6 @@ SystemJS.config({
   packages: {
     ".": {
       main: './app.js',
-      defaultExtension: 'js'
     }
   },
   meta: {
