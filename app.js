@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Covenant from './Covenant.jsx';
-import History from './History.jsx';
-import {getCovenants} from './modules.covenants.js';
+import { getCovenants } from './modules.covenants.js';
+import CovenantsComponent from './CovenanListCompoment.js';
 
 
 
@@ -16,14 +16,14 @@ class Paragraph extends React.Component {
   render() {
     return (
       <p className="">
-      {this.props.text}
+        {this.props.text}
       </p>
     )
   }
 }
 
 class Main extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = {
       covenants: getCovenants()
@@ -31,21 +31,11 @@ class Main extends React.Component {
   }
 
   render() {
-    return  (
+    return (
       <div className="">
         <Title label={this.props.title} />
-          <Paragraph text={this.props.text} />
-          {
-            this.state.covenants.map(
-              covenant => {
-                
-                return (
-                  <Covenant key={covenant.id || covenant.name} covenant={covenant}  ><section className={"history"}> <article className={"entry"} ><h6>Founding</h6></article></section>
-                  </Covenant>
-                );
-              }
-            )
-          }
+        <Paragraph text={this.props.text} />
+        <CovenantsComponent entries={this.state.covenants} />
       </div>
     )
   }
