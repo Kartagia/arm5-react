@@ -9,6 +9,7 @@ export function createCovenant(name, {...options}) {
     throw new Error("Identifier already reserved");
   }
   let result = new Covenant({name, magi, companions, grogs, library, vis, id: (id || createId())});
+  covenants.push(result);
   return result;
 }
 
@@ -17,7 +18,7 @@ export function createCovenant(name, {...options}) {
  * The in memory cache of covenants.
  */
 const covenants = [];
-createCovenant('Fengheld', {id: createId()});
+createCovenant('Fengheld');
 createCovenant('Jaferia');
 console.log(`Covenants: ${covenants}`);
 
@@ -42,9 +43,9 @@ function createId() {
     if (nextId >= Number.MAX_SAFE_INTEGER) {
       throw new Error("Id supply exhausted");
     }
-    result = nextId++;
+    result = `covenant${nextId++}`;
   } while (fetchCovenant(result) != null); 
-  return nextId++;
+  return nextId;
 }
 
 /**
