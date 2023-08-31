@@ -1,6 +1,6 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
-import ReactDOM from 'react-dom';
-import Covenant from './Covenant.jsx';
+import { createRoot } from 'react-dom/client.js';
 import { getCovenants } from './modules.covenants.js';
 import CovenantsComponent from './CovenanListCompoment.js';
 
@@ -41,8 +41,9 @@ class Main extends React.Component {
   }
 }
 
-
-ReactDOM.render(
+// Fixing the depricated rendering.
+const root = createRoot();
+root.render(
   <Main title="React" text="Caution: do not look into laser with remaining eye."></Main>,
   document.getElementById('react-app')
 );
