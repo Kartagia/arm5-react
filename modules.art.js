@@ -166,6 +166,19 @@ export function getArts() {
 
 }
 
+/**
+ * The enumeration of the Hermetic Arts
+ * @readonly
+ * @enum {Art} 
+ */
+export const HermeticArts = getArts().reduce(
+  (result, art) => {
+    result[art.name] = art;
+    result[art.abbrev] = art;
+    return result;
+  },
+  {});
+
 
 export default {
 

@@ -479,7 +479,7 @@ export class VisAmounts {
   /**
    * Get value of members matching the filter.
    * @param {Predicate<VisAmount>} filter The function counted members must pass.
-   * @default A filter passing all members.
+   * Defaults to a filter passing all members.
    * @return {number} The integer number of the total pawns matching the filter.
    */
   totalValue(filter = () => true) {
@@ -537,6 +537,30 @@ export class VisContainer extends VisAmounts {
    */
   static create(item, capacity = undefined, ...visAmounts) {
     return new VisContainer({ item: item, capacity: capacity, amounts: [...visAmounts] });
+  }
+
+  /**
+   * Tries to store the amount of vis.
+   * @param {VisAmount} amount Stores the vis.
+   * @param {boolean} [partial=false] Does the storing allow partial storing.
+   * @return {VisAmount|undefined} The amount of vis not stored. An undefined
+   * value indicates all vis was stored.
+   */
+  storeVis(amount, partial = false) {
+    if (amount && +amount > 0) {
+      if (+amount <= this.availableCapacity()) {
+        // Storing the amount.
+        super.contents.push(amount);
+        return undefined;
+      } else if (partial) {
+        // Performing partial storing.
+        const storedAmount = new VisAmount(Math.min(this.availableCapacity, +amount), amount.art);
+        super.contents.push(storedAmount);
+        return new VisAmount(+amount - +storedAmount, amount.art);
+      } else {
+        return amount;
+      }
+    }
   }
 }
 

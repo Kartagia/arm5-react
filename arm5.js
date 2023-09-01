@@ -1,4 +1,12 @@
 
+import Covenant from "./modules.covenant";
+// eslint-disable-next-line no-unused-vars
+import { HermeticArts, Art } from "./modules.art";
+// eslint-disable-next-line no-unused-vars
+import { VisContainer, VisAmount } from "./modules.vis";
+// eslint-disable-next-line no-unused-vars
+import { dieRoll, complexResult } from "./modules.rules";
+
 /**
  * Create a new tribunal.
  * @param {string} name The name of the tribunal
@@ -20,8 +28,10 @@ function visContainerMapper(container, _index, _list) {
     case "string":
     // Parse
 
+    // eslint-disable-next-line no-fallthrough
     case "object":
     // One of object types
+    // eslint-disable-next-line no-fallthrough
     default:
       // Unknown type
       return null;
@@ -31,44 +41,94 @@ function visContainerMapper(container, _index, _list) {
 /**
  * A vis source implies a single
  * source of vis.
+ * @param {string} name The name of the vis source.
+ * @param {VisAmount|number} [amount=1] The amount of harveted vis.
+ * @param {Art} [art] The art of the vis. This is required, if the amount
+ * is a number.
  */
 export class visSource {
-  constructor(_name, amount = 1, containers = []) {
+  constructor(name, amount = 1, art = undefined) {
     this.amount = amount;
-    this.containers = containers.map(visContainerMapper);
+    this.name = name;
+    this.art = art;
+    if (typeof amount === "number" && (!(art instanceof Art))) {
+      throw new TypeError("Art must be defined, if amount is a nubmer!")
+    }
   }
 
-  harvest() {
+  /**
+   * Harvest the source.
+   * @param {VisContainer} [item] The item into which the vis is stored.
+   * @returns {Array<VisContainer|VisAmount>} If the item was provided, or the source 
+   *   does not provide vis container, the amount of vis harvested. Otherwise the 
+   *   vis container containing the vis.
+   */
+  harvest(item = undefined) {
     const result = [];
-    if (typeof amount === "number") {
+    let amount = 0, art = this.art;
+    if (typeof this.amount === "number") {
+      amount = this.amount;
+    } else if (this.amount instanceof dieRoll) {
+      var roll = this.amount.roll();
+      amount = roll.value;
+    }
 
-    } else if (amount instanceof roll) {
-      var roll = amount.roll();
-      if (this.containers) {
-
-      } else {
-        result, push(VisContainer.create(roll.value, arts.vim))
+    if (item) {
+      result.push(item);
+    }
+    if (item) {
+      let storedAmount = Math.min(item.availableCapacity(), amount);
+      if (storedAmount > 0) {
+        item.storeVis(new VisAmount(storedAmount, art));
+        amount -= storedAmount;
       }
-      result.push();
+    }
+    if (amount > 0) {
+      // Storing the vis to the containers of the source.
+      let visAmount = new VisAmount(amount, art);
+      if (this.container) {
+        visAmount = (this.container instanceof Array ? this.container : [this.container]).reduce(
+          (remainder, storage) => {
+            if (+remainder > 0) {
+              let amount = storage.storeVis(remainder, true);
+              if (amount == null || +amount < +remainder) {
+                // Adding the storage storing some vis.
+                result.push(storage);
+              }
+            } else {
+              return remainder;
+            }
+          }, visAmount);
+        if (visAmount) {
+          result.push(visAmount);
+        }
+      } else {
+        result.push(visAmount);
+      }
     }
     return result;
   }
 }
 
 export function createVisSource(
-  _name, _arts, _amount, _value = undef) {
+  // eslint-disable-next-line no-unused-vars
+  _name, _arts, _amount, _value = undefined) {
   return
 }
 
 
+/**
+ * Get the tribunals. 
+ * @returns {Array<Tribunal>} The tribunals.
+ */
 export function getTribunals() {
   return [
-    createTribunal('Rhine'),
-    createTribunal('Rome'),
-    createTribunal('Greater Alps'),
-    createTribunal('Iberia', [
-      createCovenant('Jaferia'),
-      createCovenant('Barcelona')
+    new Tribunal('Rhine'),
+    new Tribunal('Rome'),
+    new Tribunal('Greater Alps'),
+    new Tribunal('Iberia', [
+      new Covenant('Jaferia'),
+      new Covenant('Barcelona')
     ])
   ];
 }
