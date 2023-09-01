@@ -1,9 +1,10 @@
+/* eslint-disable no-undef */
 SystemJS.config({
-  baseURL:'https://unpkg.com/',
+  baseURL: 'https://unpkg.com/',
   defaultExtension: true,
   packages: {
     ".": {
-      main: './app.js',
+      main: './App.jsx',
       defaultExtension: 'js'
     }
   },
@@ -14,13 +15,13 @@ SystemJS.config({
       }
     },
     '*.jsx': {
-        'babelOptions': {
-          react: true
+      'babelOptions': {
+        react: true
       }
     },
     'modules/*[cm]?jsx?': {
-        'babelOptions': {
-          react: true
+      'babelOptions': {
+        react: true
       }
     }
   },
