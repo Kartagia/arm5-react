@@ -66,7 +66,7 @@ export class Season {
   
   compare(other) {
     let target;
-    if (other instanceof season) {
+    if (other instanceof Season) {
       target = other.value;
     } else {
       target = 0+other;
@@ -118,13 +118,14 @@ export const seasons = {
   from(value) {
     switch (typeof value) {
       case "string":
-        return this.parse(values);
+        return this.parse(value);
       case "number":
         return this.ofValue(value);
       case "object":
         if (value instanceof Season) {
-          return this.ofValue(season.value);
+          return this.ofValue(value.value);
         }
+      // eslint-disable-next-line no-fallthrough
       default:
         return undefined;
     }
@@ -200,13 +201,13 @@ export class seasonOfYear {
      }
      // Normalizing the day of year
      let amount = 0;
-     while (dayOdYear < 0) {
+     while (dayOfYear < 0) {
        year--;
        amount = 365 + (isLeapYear(year)?1:0);
-       dayOdYear += amount;
+       dayOfYear += amount;
      }
      while (dayOfYear > (amount = 365 + (isLeapYear(year)?1:0)) ) {
-       dayOfYear -= amount;;
+       dayOfYear -= amount;
        year++;
      }
      
@@ -216,7 +217,7 @@ export class seasonOfYear {
        if (baseSeason == 0) {
          year--;
        }
-       season += 4;
+       baseSeason += 4;
      }
      return new seasonOfYear(year, baseSeason);
    }
@@ -234,7 +235,7 @@ export class seasonOfYear {
        // Add leap day to dates following it
        dayOfYear++;
      }
-     if (isLeapYear(year) && dayOfYear > daysOfYear[1]) {
+     if (isLeapYear(year) && dayOfYear > daysOfYears[1]) {
        // Remove leap day
        dayOfYear--;
      }
@@ -273,7 +274,7 @@ export class seasonOfYear {
          return result;
       case "object":
         if (other instanceof Date) {
-          date = this.constructor.fromDate(other);
+          const date = this.constructor.fromDate(other);
   
           result = this.year - date.year;
           if (result === 0) {
@@ -287,6 +288,7 @@ export class seasonOfYear {
         } else if (other instanceof Season) {
           result = this.season.compare(other);
         }
+      // eslint-disable-next-line no-fallthrough
       default:
       return result;
       
@@ -303,7 +305,7 @@ export class seasonOfYear {
      if (rep) {
        const asStr = "" + rep;
        const regex = new RegExp("^(?<season>\\p{Lu}\\p{Ll}+)\\s*(?<year>\\d+)$", "u");
-       const match = regEx.exec(asStr);
+       const match = regex.exec(asStr);
        if (match) {
          let quarter = seasons.from(match.groups["season"]);
          let year = Number.parseInt(match.groups["year"]);
@@ -334,7 +336,7 @@ function parseJulianDate(str) {
     new RegExp("^" + createYearRegex(null, null, true) + "/" +
     "(?<month>1?\\d)$")
   ].forEach(
-    (pattern, index) => {
+    (pattern) => {
       if (result) { return; }
       let match = pattern.exec(str);
       if (match) {
