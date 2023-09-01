@@ -1,100 +1,121 @@
-import Covenant  from './modules.covenant.js';
+import Covenant from './modules.covenant.js';
+import { getMaxId, idGenerator } from './modules.idGenerator.js';
+
 
 /**
- * Create a new covenant.
+ * @typedef {object} DAO 
+ * @template CONTENT, ID
+ * 
+ * @method update 
+ * @param {ID} id The updated identifier.
+ * @param {ChangesType} changes The changes.
+ * @returns {ID?} The new identifeir of the modified covenant, or undefined if nothing changed.
+ * 
+ * @method create 
+ * @returns {import('./modules.covenant.js').CovenantProperties} The identifier of the created content.
+ * @throws {RangeError} The identifier provided was already taken.
+ * @throws {Error} The construction of a new identfiier failed.
+ * 
+ * @method remove
+ * @param {ID} id The removed identifier.
+ * 
+ * @method retrieve 
+ * @param {ID} id The identifier of the fetched value.
+ * @return {CONTENT|undefined} The content assigned with the given identifier
+ * @throws {TypeError} The type of the identifier is invalid.
+ * 
+ * @method all
+ * @returns {Array<CONTENT>} The contents of the DAO.
  */
-export function createCovenant(name, {...options}) {
-  const {magi = [], companions = [], grogs = [], library = [], vis = [], id = undefined} = options;
-  if (id != null && fetchCovenant(id) != null) {
-    throw new Error("Identifier already reserved");
+
+/**
+ * Data access object used to access covenants.
+ * @implements DAO<Covenant, number>
+ */
+export default class CovenantDAO {
+
+  /**
+   * Create a new covenant storing DAO.
+   * @param {Array<Covenant>} [content=[]] The initial contents of the dao. 
+   */
+  constructor(content = []) {
+    this.content = [...(content)];
+    this.idGen = idGenerator(this.content.reduce(getMaxId, 0) + 1);
   }
-  let result = new Covenant({name, magi, companions, grogs, library, vis, id: (id || createId())});
-  return result;
-}
 
+  /**
+   * @inheritdoc
+   */
+  all() {
+    return this.filter(() => (true));
+  }
 
-/**
- * The in memory cache of covenants.
- */
-const covenants = [];
-createCovenant('Fengheld', {id: createId()});
-createCovenant('Jaferia');
-console.log(`Covenants: ${covenants}`);
+  /**
+   * @inheritdoc
+   */
+  filter(filter) {
+    return this.content.filter(filter);
+  }
 
-
-function getCovenantId(covenant) {
-  return covenant ? (covenant.id || createId()) : undefined;
-}
-
-/**
- * The next identifier.
- */
-var nextId = 1;
-
-/**
- * Produce an unique id.
- * @return An unique id for a covenant.
- */
-function createId() {
-  
-  let result = `covenant${nextId++}`;
-  do {
-    if (nextId >= Number.MAX_SAFE_INTEGER) {
-      throw new Error("Id supply exhausted");
+  /**
+   * @inheritdoc
+   * @param {number} id the identifier of the updated covenant. 
+   * @param {CovenantProperties|Array<CovenantProperties>} changes The changes of the covenant.
+   * @returns {number} The new identifier of the updated covenant.
+   * An undefined value, if there was no changes.
+   */
+  update(id, changes) {
+    const target = this.retrieve(id);
+    if (target) {
+      if (changes instanceof Covenant) {
+        // Changing the covenant to the covenant equal to teh current one.
+        return target.update(changes);
+      } else {
+        // The both 
+        return target.update(changes);
+      }
+    } else {
+      // Nothing to change.
+      return undefined;
     }
-    result = nextId++;
-  } while (fetchCovenant(result) != null); 
-  return nextId++;
-}
-
-/**
- * Get all covenants.
- * @param {Preficate<Covenant>} [filter] The filter selecting covenants. Defaults to all covenants.
- */
-export function getCovenants(filter = null) {
-  return covenants.filter((filter ? filter : (value) => (true)));
-}
-
-/**
- * Fetch covenant with id.
- * @param {string} id the covenant identifier.
- */
-export function fetchCovenant(id) {
-  return covenants.find((c) => (c.id === id));
-}
-
-export function getCovenant(index) {
-  switch (typeof index) {
-    case "string":
-      index = Number.parseInt(index);
-    case "number":
-      return (Number.isInteger(index) ? covenants[index] : null);
-    default:
-      return null;
   }
-}
 
-export function updateCovenant(id, covenant) {
-  console.log(`Updating covenant ${id}`);
-  const target = fetchCovenant(id);
-  if (target) {
-    for (key in covenant) {
-      console.log(`Covenant ${id}: Update ${key} from [${target[key]}] to [${covenant[key]}]`)
-      target[key] = covenant[key];
+  /**
+   * Get the covenant with identifier.
+   * @param {number} id the idnetifier of the retrieved covenant. 
+   * @returns {Covenant|undefined} The covennat with the given identifier, or
+   * an undefined value.
+   */
+  retrieve(id) {
+    return this.content.find((entry) => (entry && entry.id === id));
+  }
+
+  /**
+   * Create a new covenant. 
+   * @param {Covenant|CovenantProperties|CovenantChanges} source 
+   * @return {number} The identifier of the created covenant.
+   * @throws {RangeError} THe covenant with the same identfier already
+   * exists.
+   */
+  create(source) {
+    const created = new Covenant(source);
+    if (created.id == null) {
+      // Determining the identifier of the created automatically.
+      let newId;
+      do {
+        newId = this.idGen.next().value;
+      } while (newId != null && this.fetch(newId) != null);
+      if (newId == null) {
+        // The identifier supply exhausted.
+        return new Error("The identifier supply exhautes");
+      } else {
+        created.id = newId;
+      }
+    } else if (this.fetch(created.id) != null) {
+      // The created object already exists - the update is required.
+      throw new RangeError("Covenant with the identifier already exists");
     }
-    console.log("Update completed")
-  } else {
-    console.log(`Missing covenant $(id}`);
-    throw Error("Missing covenant");
+    this.content.push(created);
+    return created.id;
   }
 }
-
-export function removeCovenant(id) {
-  const index = covenants.findIndex( (c) => (c.id === id));
-  if (index >= 0) {
-    covenants.splice(index, 1);
-    console.log(`Removed covenant ${id} at index ${index}`);
-  }
-}
-
-export default {getCovenants, fetchCovenant, createCovenant, updateCovenant, deleteCovenant };
