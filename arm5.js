@@ -1,6 +1,9 @@
 
 /**
  * Create a new tribunal.
+ * @param {string} name The name of the tribunal
+ * @param {Array<Covenent|string>} [covenants=[]] The covenants of the tribunal.
+ * @param {Array<Person>} [magi=[]] The magi of the tribunal. 
  */
 export function Tribunal(name, covenants = [], magi = []) {
   return {
@@ -11,7 +14,8 @@ export function Tribunal(name, covenants = [], magi = []) {
 }
 
 
-function visContainerMapper(container, index, list) {
+// eslint-disable-next-line no-unused-vars
+function visContainerMapper(container, _index, _list) {
   switch (typeof container) {
     case "string":
     // Parse
@@ -29,7 +33,7 @@ function visContainerMapper(container, index, list) {
  * source of vis.
  */
 export class visSource {
-  constructor(name, amount = 1, containers = []) {
+  constructor(_name, amount = 1, containers = []) {
     this.amount = amount;
     this.containers = containers.map(visContainerMapper);
   }
@@ -52,7 +56,7 @@ export class visSource {
 }
 
 export function createVisSource(
-  name, arts, amount, value = undef) {
+  _name, _arts, _amount, _value = undef) {
   return
 }
 
