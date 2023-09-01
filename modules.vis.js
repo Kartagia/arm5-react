@@ -140,10 +140,10 @@ export class Size extends RDT {
 }
 
 export const RequisiteType = {
-  Mandatory: MagnitudeModifier("Mandatory", 0),
-  Optional: MagnitudeModifier("Optional", 1),
-  Cosmetic: MagnitudeModifier("Cosmetic", 0),
-  Casting: MagnitudeModifier("Casting", 0)
+  Mandatory: new MagnitudeModifier("Mandatory", 0),
+  Optional: new MagnitudeModifier("Optional", 1),
+  Cosmetic: new MagnitudeModifier("Cosmetic", 0),
+  Casting: new MagnitudeModifier("Casting", 0)
 }
 
 export class ArtRequisite {

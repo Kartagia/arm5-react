@@ -15,7 +15,7 @@ import Covenant from "./modules.covenant.js";
  * @returns
  */
 export default function CovenantComponent(props) {
-  const covenant = props.covenant;
+  const covenant = props.entry;
   if (covenant instanceof Covenant) {
     // The compoent is created with a covenant ifnormation.
     // Create result
@@ -39,6 +39,6 @@ export default function CovenantComponent(props) {
 CovenantComponent.defaultProps = {};
 
 CovenantComponent.propTypes = {
-  covenant: PropertyTypes.object,
+  entry: PropertyTypes.object,
   children: PropertyTypes.any,
 };

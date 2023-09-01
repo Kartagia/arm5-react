@@ -18,17 +18,25 @@ class Paragraph extends React.Component {
 export default class Main extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      covenants: Covenants,
-    };
+    this.state = {};
   }
 
   render() {
+    const covenants = new Covenants();
+    covenants.create({ name: "Fengheld" });
+    console.log("Covenants: " + covenants.all());
     return (
       <div className="">
         <Title label={this.props.title} />
         <Paragraph text={this.props.text} />
-        <CovenantsComponent entries={this.state.covenants} />
+        <CovenantsComponent entries={[...covenants.all()]} />
+        {covenants.all().map((e) => {
+          return (
+            <li key={e.id}>
+              {e.name}(#{e.id})
+            </li>
+          );
+        })}
       </div>
     );
   }

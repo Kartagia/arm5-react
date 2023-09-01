@@ -4,19 +4,19 @@ import { useState, useId } from "react";
 import PropTypes from "prop-types";
 
 import { Entry } from "./module.history.js";
-import { idGenerator } from "./modules.idGenerator.js";
+import { IdGenerator } from "./modules.idGenerator.js";
 
 /**
  * The id generator used to generate identfiers for the history entries.
  */
-const entryId = idGenerator(1);
+const entryId = IdGenerator.from(1);
 /**
  * Create a new entry.
  * The creation adds the entry to the Rest service.
  */
 function createEntry(title, date, description = "") {
   return {
-    id: entryId.next().value,
+    id: entryId.next(),
     name: title,
     date: date,
     description: description,

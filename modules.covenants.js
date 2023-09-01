@@ -1,5 +1,5 @@
 import Covenant from './modules.covenant.js';
-import { getMaxId, idGenerator } from './modules.idGenerator.js';
+import { getMaxId, IdGenerator } from './modules.idGenerator.js';
 
 
 /**
@@ -18,6 +18,7 @@ import { getMaxId, idGenerator } from './modules.idGenerator.js';
  * 
  * @method remove
  * @param {ID} id The removed identifier.
+ * @return {Covenant|undefined} The removed covenant.
  * 
  * @method retrieve 
  * @param {ID} id The identifier of the fetched value.
@@ -40,7 +41,8 @@ export default class CovenantDAO {
    */
   constructor(content = []) {
     this.content = [...(content)];
-    this.idGen = idGenerator(this.content.reduce(getMaxId, 0) + 1);
+    const firstId = this.content.reduce(getMaxId, 0) + 1;
+    this.idGen = IdGenerator.from(firstId);
   }
 
   /**
@@ -103,8 +105,9 @@ export default class CovenantDAO {
       // Determining the identifier of the created automatically.
       let newId;
       do {
-        newId = this.idGen.next().value;
-      } while (newId != null && this.fetch(newId) != null);
+        newId = this.idGen.next();
+        console.log(`New Id Candidate: ${newId}`);
+      } while (newId != null && this.retrieve(newId) != null);
       if (newId == null) {
         // The identifier supply exhausted.
         return new Error("The identifier supply exhautes");
@@ -117,5 +120,18 @@ export default class CovenantDAO {
     }
     this.content.push(created);
     return created.id;
+  }
+
+  /**
+   * @inheritdoc
+   * @param {number} id 
+   */
+  remove(id) {
+    const index = this.content.findIndex((c) => (c.id === id));
+    if (index >= 0) {
+      return this.content.splice(index, 1);
+    } else {
+      return undefined;
+    }
   }
 }

@@ -102,7 +102,7 @@ export const TECHNIQUE = ArtType.TECHNIQUE;
  * @return {List<Art>} The list containing all Hermetic Techniques.
  */
 export function getTechniques() {
-  return arts.filter(art => (art.type === TECHNIQUE));
+  return arts.filter(art => (art.type === ArtType.TECHNIQUE));
 }
 
 /**
@@ -110,7 +110,7 @@ export function getTechniques() {
  * @return {List<Art>} The list containing all Hermetic Forms.
  */
 export function getForms() {
-  return arts.filter(art => (art.type === FORM));
+  return arts.filter(art => (art.type === ArtType.FORM));
 }
 
 /**
@@ -120,7 +120,7 @@ export function getForms() {
  * @param {ArtType} [type=FORM] The art type of the created art.
  * @throws {Error} Any parameter was invalid.
  */
-export function createArt(name, abbrev = undefined, type = FORM) {
+export function createArt(name, abbrev = undefined, type = ArtType.FORM) {
   const abbreviation = (abbrev == null ? name.substring(0, 2) : abbrev);
   /**
    * A Hermetic Art as POJO.
@@ -145,11 +145,11 @@ export function createArt(name, abbrev = undefined, type = FORM) {
   };
 }
 export function createTechnique(name, abbrev = undefined) {
-  return createArt(name, abbrev, TECHNIQUE);
+  return new Technique(name, abbrev);
 }
 
 export function createForm(name, abbrev = undefined) {
-  return createArt(name, abbrev, FORM);
+  return new Form(name, abbrev);
 }
 
 
@@ -159,9 +159,9 @@ export function createForm(name, abbrev = undefined) {
  */
 export function getArts() {
   return [
-    ...(["Creo", "Intellego", "Muto", "Perdo", "Rego"].map((name) => (createTechnique(name)))),
+    ...(["Creo", "Intellego", "Muto", "Perdo", "Rego"].map((name) => (new Technique(name)))),
     ...(["Animal", "Auram", "Aquam", "Corpus", "Herbam",
-      "Ignem", "Imaginem", "Mentem", "Terram", "Vim"].map((name) => (createForm(name)))),
+      "Ignem", "Imaginem", "Mentem", "Terram", "Vim"].map((name) => (new Form(name)))),
   ];
 
 }

@@ -1,17 +1,57 @@
 /**
- * Create an identifier generator.
- * @param {number} [first=1] The first returned identifier.
- * @param {*} [max] The smallest number which indicates the
- * identifier supply is exhausted.
- * @default Number.MAX_SAFE_INTEGER
- * @returns Geneartor function generating new identifiers.
+ * Class id generator generates idnetifiers.
+ * @template VALUE The value type of hte id generation.
  */
-export function* idGenerator(first = 1, max = Number.MAX_SAFE_INTEGER) {
-  if (first < max) {
-    yield first++;
-  } else {
-    return undefined;
+export class IdGenerator {
+
+  /**
+   * Creates a new id generator
+   * @template VALUE
+   * @param {VALUE} first The first value.
+   * @param {Predicate<VALUE>} endCondition The condition ending the iteartion.
+   * @param {Function<VALUE, VALUE>} advancer The function generating the next value of iteration.
+   */
+  constructor(first, endCondition, advancer) {
+    this.current = first;
+    this.endCondition = endCondition;
+    this.advancer = advancer;
   }
+
+  /**
+   * Create an Id Generator from start to the largest start + n*step < end.
+   * @param {number} [start=1] The start of the generation.
+   * @param {number} [end] The end of the generation.
+   * @param {number} [step=1] 
+   * @returns {IdGenerator} The id generator object.
+   */
+  static from(start, end = Number.MAX_SAFE_INTEGER, step = 1) {
+    return new IdGenerator(start, (value) => (value >= end), (value) => (value + step));
+  }
+  /**
+   * Next iteration result.
+   * @param {A|undefined} value 
+   * @returns {Iteration}
+   */
+  next() {
+    if (this.endCondition(this.current)) {
+      // The iteration is over
+      return undefined;
+    } else {
+      // Iterating next value.
+      const result = this.current;
+      this.current = this.advancer(this.current);
+      return result;
+    }
+  }
+
+  /**
+   * Does the generator have more results.
+   * @returns {boolean} True, if and only if the iteration has more results.
+   */
+  hasNext() {
+    return !(this.endCondition(this.current));
+  }
+
 }
 
 /**
