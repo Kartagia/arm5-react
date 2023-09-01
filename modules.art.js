@@ -2,23 +2,70 @@
 
 /**
  * Hermetic Art defines an Art of the mages.
- * @typedef {Object} Art
- * @property {string} name The name of the art.
- * @property {string} abbrev The short abbreviation of the art.
- * @property {ArtType} type The art type.
  */
- 
- /**
-  * The Art Type defines enumeration of the Art types.
-  * @typedef ArtType
-  * @readonly
-  * @enum {string}
-  */
+export class Art {
+
+  /**
+   * Create a new art.
+   * @param {string} name The name of the created art.
+   * @param {string} abbrev The abbreviation of the created art.
+   * @param {string} type The type of the art.
+   */
+  constructor(name, abbrev, type) {
+    this._name = name;
+    this._abbrev = abbrev == null ? this.name.substring(0, 2) : abbrev;
+    this._type = type;
+  }
+
+  /**
+   * The name of the art.
+ * @type {string}
+   */
+  get name() {
+    return this._name;
+  }
+
+  /**
+   * Tte abbreviation of the art.
+   * @type {string}
+   */
+  get abbrev() {
+    return this._abbrev;
+  }
+
+  /**
+   * The type of the art.
+   * @type {string}
+   */
+  get type() {
+    return this._type;
+  }
+}
+
+/**
+ * The Art Type defines enumeration of the Art types.
+ * @readonly
+ * @enum {string}
+ */
 export const ArtType = {
   TECHNIQUE: "Form",
   FORM: "Technique"
 }
 
+/**
+ * @typedef {Art} Technique
+ */
+export class Technique extends Art {
+  constructor(name, abbrev) {
+    super(name, abbrev, ArtType.TECHNIQUE);
+  }
+}
+
+export class Form extends Art {
+  constructor(name, abbrev) {
+    super(name, abbrev, ArtType.FORM);
+  }
+}
 
 /**
  * Mapping from art name to Art implementation.
@@ -36,8 +83,8 @@ const arts = getArts().reduce(
     return result;
   }
   , {});
-  
-  
+
+
 /**
  * Constant of the Art type for Hermetic Forms.
  * @type {ArtType}
@@ -55,7 +102,7 @@ export const TECHNIQUE = ArtType.TECHNIQUE;
  * @return {List<Art>} The list containing all Hermetic Techniques.
  */
 export function getTechniques() {
-  return arts.filter( art => (art.type === TECHNIQUE));
+  return arts.filter(art => (art.type === TECHNIQUE));
 }
 
 /**
@@ -63,7 +110,7 @@ export function getTechniques() {
  * @return {List<Art>} The list containing all Hermetic Forms.
  */
 export function getForms() {
-  return arts.filter( art => (art.type === FORM));
+  return arts.filter(art => (art.type === FORM));
 }
 
 /**
@@ -73,8 +120,8 @@ export function getForms() {
  * @param {ArtType} [type=FORM] The art type of the created art.
  * @throws {Error} Any parameter was invalid.
  */
-export function createArt(name, abbrev = undefined, type=FORM) {
-  const abbreviation = (abbrev == null? name.substring(0,2) : abbrev);
+export function createArt(name, abbrev = undefined, type = FORM) {
+  const abbreviation = (abbrev == null ? name.substring(0, 2) : abbrev);
   /**
    * A Hermetic Art as POJO.
    * @class Art
@@ -114,20 +161,20 @@ export function getArts() {
   return [
     ...(["Creo", "Intellego", "Muto", "Perdo", "Rego"].map((name) => (createTechnique(name)))),
     ...(["Animal", "Auram", "Aquam", "Corpus", "Herbam",
-    "Ignem", "Imaginem", "Mentem", "Terram", "Vim"].map((name) => (createForm(name)))),
+      "Ignem", "Imaginem", "Mentem", "Terram", "Vim"].map((name) => (createForm(name)))),
   ];
 
 }
 
 
 export default {
-  
-  ArtType, 
+
+  ArtType,
   getArts,
   getForms,
   getTechniques,
   createArt,
   createTechnique,
   createForm
-  
+
 };
