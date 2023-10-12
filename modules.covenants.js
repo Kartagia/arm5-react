@@ -6,9 +6,9 @@ import Covenant  from './modules.covenant.js';
  * @param {number} [id=1] The first identifier.
  * @param {number} [max=Number.MAX_SAFE_INTEGER] The smallest id nonlonger returned.
  */
-function *nextId(id=1, max=Number.MAX_SAFE_INTEGER) {
+export function *nextId(id=1, max=Number.MAX_SAFE_INTEGER) {
   while (id < max) {
-    yield id++;
+    return yield id++;
   }
   return undefined;
 }
@@ -29,13 +29,13 @@ export function applyChanges(target, changes) {
     } else if (changes instanceof Function) {
       changes(target);
     } else if (changes instanceof Map) {
-      changes.forEach((prop, val) => {
+      for (const [prop, val] of changes.entries()) {
         if (target instanceof Map) {
           target.set(prop, val);
         } else {
           target[prop] = val;
         }
-      })
+      }
     } else if (typeof changes == "object") {
       for (var prop in changes) {
         if (target instanceof Map) {
@@ -89,7 +89,7 @@ export class CovenantDAO {
   }
   
   remove(id) {
-    this.contents = this.contents.filter( (c) => (c.id === id));
+    this.contents = this.contents.filter( (c) => (c.id !== id));
   }
   
   retrieve(id) {
@@ -114,8 +114,10 @@ export class CovenantDAO {
   }
 }
 
+const defaultDAO = new CovenantDAO();
+
 /**
  * The default export is the default
  * DAO.
  */
-export default new CovenantDAO();
+export default defaultDAO;

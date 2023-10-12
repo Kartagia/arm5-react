@@ -1,8 +1,28 @@
+''
+export class Person {
+  
+}
+
+export function personToString(person, registry=[]) {
+  if (person instanceof Object) {
+    return `${person.name}`;
+  } else if (registry) {
+    const result = registry.find( (p) => (p.id === person));
+    if (result) {
+      return `${result.name}`;
+    } else {
+      console.error(`Invalid person ref [${person}]`);
+      return "Invalid person";
+    }
+  } else {
+    return "Invalid person";
+  }
+}
 
 /**
  * A class representing a covenant.
  */
-export default class Covenant {
+export class Covenant {
   
   constructor({name, id=null, magi=[], companions=[], grogs=[],  ...options}) {
     this.name = name;
@@ -11,26 +31,31 @@ export default class Covenant {
     this.magi = [...magi];
     this.companions = [...companions];
     this.grogs = [...grogs];
-    this.people = options.peopleRegistry;
+    this.people = options.people;
     
     //TODO: Library support
     //TODO: Resources support
     console.log(`Created covenant ${this.name}`);
   }
   
+  /**
+   * Convert the value to a JSON.
+   */
   toJSON(key="") {
     // Characters are stored to
     // registry
     if (this.people) {
       // Encode people stored in registry
       const encoder = (person) => {
-        if (this.people.contains(person)) {
+        if (person == null) {
+          return null;
+        } else if (person.id && this.people.find((p)=>((p.id != null) && (p === person)))) {
           return person.id;
         } else {
           return person;
         }
       };
-      return {
+      return JSON.stringify({
         name: this.name,
         id: this.id,
         tribunal: this.tribunal,
@@ -38,21 +63,21 @@ export default class Covenant {
         magi: this.magi.map(encoder),
         grogs: this.grogs.map( encoder ),
         companions : this.companions.map( encoder )
-      };
+      });
     } else {
       // Characters are stored in covenant
-      return {
+      return JSON.stringify({
         name: this.name,
         id: this.id,
         tribunal: this.tribunal,
         magi: this.magi,
         companions: this.companions,
         grogs: this.grogs,
-      }
+      });
     }
   }
   
-  static parseJSON(key, value) {
+  static reviver(key, value) {
     if (key) {
       return value;
     } else {
@@ -61,9 +86,16 @@ export default class Covenant {
         // Registry exists - reviving the values
         const revert = (person) => {
           if (Number.isInteger(person)) {
-            return value.people.fetch(person);
-          } else {
+            const result = value.people.find( (v) => (v && v.id === person));
+            if (result) {
+              return result;
+            } else {
+              throw SyntaxError(`No people found with id ${person}`);
+            }
+          } else if (person instanceof Object) {
             return person;
+          } else {
+            throw new TypeError(`Invalid person ${person}`);
           }
         };
         value.magi = value.magi.map( revert);
@@ -75,7 +107,13 @@ export default class Covenant {
     }
   }
   
+  static parseJSON(json) {
+    return JSON.parse(json, this.reviver);
+  }
+  
   toString() {
     return `${this.name}(${this.magi.length} members)`;
   }
 }
+
+export default Covenant;
