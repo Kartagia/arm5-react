@@ -1,4 +1,5 @@
-import { personToString, composeId } from '././modules.covenant.js';
+import { personToString, composeId } from './modules.covenant.js';
+
 
 export function PersonList({
   title,
@@ -13,15 +14,17 @@ export function PersonList({
   console.groupEnd();
   return (
     <section>
-    {title && <caption>{title}</caption>}
-    {members && members.map(
+    {title && <div>{title}</div> || <div />
+    }
+    { members.map(
     (member, index) => {
       if (member) {
-        const id = composeId((member.id || member.name), title, ...(props.prefix instanceof Array ? props.prefix : []) );
+        const id = member.id;
+        console.log(`Member ${id}`);
         return (<article key={id}>{personToString(member, registry)}</article>);
       } else {
         console.warn(`Undefined member @ ${index}`)
-        return <article key={`.${index}`} />;
+        return(<article key={`.${index}`} />);
       }
     })}
     </section>

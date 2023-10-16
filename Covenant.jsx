@@ -2,12 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { ucFirst } from "././module.utils.js";
-import { personToString } from './modules.covenant.js';
 
 import PersonList from "./PersonList.jsx";
 
-import { getTribunals } from './arm5.js';
-import { getArts } from './modules.art.js';
 import History from "./History.jsx";
 
 

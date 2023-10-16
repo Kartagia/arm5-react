@@ -7,6 +7,58 @@ export function ucFirst(word) {
   }
 }
 
+/**
+ * Get list property.
+ * @param {Object} props The properties.
+ * @param {Array<string|Array<string>>} keys 
+ * @param {Array} [defaultValue]
+ */
+export function getList(props,keys, defaultValue = undefined) {
+  if (props instanceof Object &&
+  keys instanceof Array) {
+    let result = undefined;
+    for (let key of keys) {
+      if (key instanceof Array) {
+        // Chain of keys
+        const val = key.reduce(
+          (result, subKey, index, wholeKey) => {
+            const source = (result && result.source);
+            if (source instanceof Object && subKey in source) {
+              if (index === wholeKey.length -1) {
+                if (source[subKey] instanceof Array) {
+                  return {value: source[subKey], done: true};
+                } else if (source[subKey]) {
+                  throw new TypeError("Invalid key - Invalid sub key")
+                } else {
+                  return undefined;
+                }
+              } else {
+                result.source = source[subKey];
+              }
+              return result;
+            } else {
+              // The chain breaks
+              return undefined;
+            }
+          }, {source: props});
+          if (val && val.done) {
+            return val.value;
+          }
+      } else if (typeof key === "string") {
+        // Single key
+        if (props[key] instanceof Array) {
+          return props[key];
+        } else if (!(typeof props[key] in ["undefined", "null"])) {
+          throw new TypeError(`Invalid key ${key}`, {cause: TypeError("Non-integer value")})
+        }
+      } else {
+        throw new TypeError("Invalid keys", {cause: TypeError(`Invalid element`)})
+      }
+    }
+  } else {
+    return undefined;
+  }
+}
 
 /**
  * Escape an HTML identifier.

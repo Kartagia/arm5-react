@@ -14,23 +14,25 @@ SystemJS.config({
     },
     '*.jsx': {
         'babelOptions': {
-          react: true
+          react: true,
+          blacklist: []
       }
     },
     'modules/*[cm]?jsx?': {
         'babelOptions': {
-          react: true
+          react: true,
+          blacklist: []
       }
     }
   },
   map: {
     'plugin-babel': 'systemjs-plugin-babel@latest/plugin-babel.js',
     'systemjs-babel-build': 'systemjs-plugin-babel@latest/systemjs-babel-browser.js',
-    'react': 'react@17.0.1/umd/react.development.js',
-    'react-dom': 'react-dom@17.0.1/umd/react-dom.development.js'
+    'react': 'react@18.2.0/umd/react.development.js',
+    'react-dom': 'react-dom@18.2.0/umd/react-dom.development.js'
   },
   transpiler: 'plugin-babel'
 });
 
-SystemJS.import('./app')
+SystemJS.import('./app.js')
   .catch(console.error.bind(console));

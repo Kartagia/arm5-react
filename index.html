@@ -6,6 +6,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>React</title>
+  <style>
+  nav {
+    padding-bottom: 2px;
+  }
+    ul.nav {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid silver;
+    };
+    ul.nav > li.menu-item {
+      text-align: center;
+      border: 3px solid black;
+    };
+  ul.nav > li.menu-item {
+    background-color: silver;
+    color: navy;
+    border: 3px solid black;
+  }
+  ul.nav > li.menu-item-active {
+    color: navy;
+    background-color: silver;
+    text-align: center;
+  }
+    ul.nav > li.menu-item {
+      text-align: center;
+    }
+    ul.nav > li:hover.menu-item {
+      border: 3px dotted black;
+    }
+    div {background-color: navy; color: silver;}
+    li.active: {font-weight: bold; background-color: green};
+    .hidden: {
+      display: none;
+    }
+  </style>
   
   <!-- React -->
   <script src="//unpkg.com/systemjs@0.19.47/dist/system.js"></script>
