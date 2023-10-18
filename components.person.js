@@ -24,7 +24,7 @@ export const Covenant = (props) => {
   }
 };
 
-function chooseProp(source, choices, options = {}) {
+export function chooseProp(source, choices, options = {}) {
   if (source instanceof Object) {
     if (choices instanceof Array) {
       const result = choices.reduce(
@@ -82,7 +82,7 @@ function chooseProp(source, choices, options = {}) {
  * @param [options={}] Options.
  */
 export function getValueOfProp(source, keys, options = {}) {
-  if (props instanceof Object) {
+  if (source instanceof Object) {
     const result = (
       keys instanceof Array ? keys : []).reduce(
       (result, key, index) => {
@@ -104,7 +104,7 @@ export function getValueOfProp(source, keys, options = {}) {
             done: true
           };
         }
-      }, { value: props, error: TypeError("Empty key") }
+      }, { value: source, error: TypeError("Empty key") }
     )
     if (result.error && !options.lenient) {
       throw result.error;
@@ -114,6 +114,8 @@ export function getValueOfProp(source, keys, options = {}) {
     throw TypeError("Invalid source");
   }
 }
+
+
 
 /**
  * Ability component.
@@ -161,107 +163,8 @@ export const Art = (props) => {
   );
 }
 
-/**
- * PersonList component
- * @param {Array<PersonModel>} [props.value] The listed people.
- * @param {string|Fragment} [props.title] The title of the list.
- * @param {string} [props.mode=""] The list mode.
- */
-export const PersonList = (props) => {
-  const [mode, setMode] = useState(props.mode || "");
-  const [entries, setEntries] = useState(props.value || []);
-  const [menu, setMenu] = useState();
-
-  const handleMenuSelect = (event) => {
-
-  };
-
-  const handleChange = (change) => {
-    if (change) {
-      const setState = setMagi;
-      switch (change.type) {
-        case "delete":
-          // Delete entry
-          if (change.index) {
-            setState((old) => ([...(old.slice(0, change.index)), ...(old.slice(change.index+1))]));
-          } else {
-            setState( (old) => (
-              old.filter( (entry) => (entry == null || entry.id !== change.id))
-            ));
-          }
-        case "update":
-          //;Update state
-        case "revert":
-          // Revert member
-          const original = (props.value || []).find((v) => (v && v.id === change.id));
-          if (original) {
-            if (change.index) {
-              setEntries((old) => {
-                return old.map((entry, index) => (index === change.index ? original : entry))
-              })
-            } else {
-              setEntries((old) => {
-                return old.reduce(
-                  (acc, entry) => {
-                    if (entry || (entry.id !== change.id)) {
-                      acc.value.push(entry);
-                    } else {
-                      acc.value.push(original);
-                    }
-                    return acc;
-                  }, { value: [] }
-                ).value
-              })
-            }
-          } else {
-            // Deleting added entry
-            if (change.index) {
-              setEntries((old) => ([...(old.slice(0, change.index)),
-            ...(old.slice(change.index + 1))]));
-            } else {
-              setEntries((old) => {
-                return old.reduce(
-                  (acc, entry) => {
-                    if (entry || (entry.id !== change.id)) {
-                      acc.value.push(entry);
-                    }
-                    return acc;
-                  }, { value: [] }
-                ).value
-              })
-            }
-          }
-        case "submit":
-          return fireChange({
-            type: "update",
-            target: change.index,
-            payload: members[change.index]
-          });
-      }
-    }
-  }
-
-  const fireChange = (change) => {
-    if (props.onChange instanceof Function) {
-      props.onChange(change);
-    }
-  }
-
-  return (
-    <section className={"PersonList"}>
-    <header>{menu && <Menu value={menu} onSelect={handleMenuSelect} />}</header>
-    <main>{
-      members && members.map(
-      (member) => (<Person value={member} onChange={handleChange} mode={mode} />)
-      )
-    }</main>
-    <footer></footer>
-    </section>
-  );
-}
 
 export default {
   Ability,
-  Art,
-  PersonList
+  Art
 };

@@ -1,10 +1,18 @@
 import React from 'react';
-import { Fragment, useId} from 'react';
+import { Fragment, useState, useId} from 'react';
 import ReactDOM from 'react-dom';
 
 import { Covenant as CovenantModel } from './modules.covenant.js';
 
-import { PersonList, Ability, chooseProps, getValueOfProp } from "./components.person.js";
+import { chooseProps, getValueOfProp } from "./components.person.js";
+
+export function Test(props) {
+  return (<h1>This is test</h1>);
+}
+
+export const Ability = (props) => {
+  return <span>{`${props.name} ${props.score || 0} (${props.xp||0})`}</span>;
+}
 
 export const Person = (props) => {
 
@@ -22,11 +30,129 @@ export const Person = (props) => {
   return (<div>{props.value}</div>);
 };
 
+function getPersonModel(prop) {
+  if (typeof prop === "string") {
+    console.log(`JSON "${prop}"`)
+    return JSON.parse(prop);
+  } else if (prop instanceof Object) {
+    console.log(`Object ${prop.id}`)
+    console.table(prop);
+    return {...prop};
+  } else {
+    console.log("Unknown person");
+    return undefined;
+  }
+}
+
+/**
+ * PersonList component
+ * @param {Array<PersonModel>} [props.value] The listed people.
+ * @param {string|Fragment} [props.title] The title of the list.
+ * @param {string} [props.mode=""] The list mode.
+ */
+export const PersonList = (props) => {
+  const [mode, setMode] = useState(props.mode || "");
+  const [entries, setEntries] = useState((props.value || []));
+
+  const handleMenuSelect = (event) => {
+    if (event && event.target && event.target.value) {
+      setMode(event.target.value);
+    }
+  };
+
+  const handleChange = (change) => {
+    if (change) {
+      const setState = setMagi;
+      switch (change.type) {
+        case "delete":
+          // Delete entry
+          if (change.index) {
+            setState((old) => ([...(old.slice(0, change.index)), ...(old.slice(change.index+1))]));
+          } else {
+            setState( (old) => (
+              old.filter( (entry) => (entry == null || entry.id !== change.id))
+            ));
+          }
+        case "update":
+          //;Update state
+        case "revert":
+          // Revert member
+          const original = (props.value || []).find((v) => (v && v.id === change.id));
+          if (original) {
+            if (change.index) {
+              setEntries((old) => {
+                return old.map((entry, index) => (index === change.index ? original : entry))
+              })
+            } else {
+              setEntries((old) => {
+                return old.reduce(
+                  (acc, entry) => {
+                    if (entry || (entry.id !== change.id)) {
+                      acc.value.push(entry);
+                    } else {
+                      acc.value.push(original);
+                    }
+                    return acc;
+                  }, { value: [] }
+                ).value
+              })
+            }
+          } else {
+            // Deleting added entry
+            if (change.index) {
+              setEntries((old) => ([...(old.slice(0, change.index)),
+            ...(old.slice(change.index + 1))]));
+            } else {
+              setEntries((old) => {
+                return old.reduce(
+                  (acc, entry) => {
+                    if (entry || (entry.id !== change.id)) {
+                      acc.value.push(entry);
+                    }
+                    return acc;
+                  }, { value: [] }
+                ).value
+              })
+            }
+          }
+        case "submit":
+          return fireChange({
+            type: "update",
+            target: change.index,
+            payload: members[change.index]
+          });
+      }
+    }
+  }
+
+  const fireChange = (change) => {
+    if (props.onChange instanceof Function) {
+      props.onChange(change);
+    }
+  }
+  
+  
+  console.group(`Person List ${mode}`);
+  console.table(entries);
+  console.groupEnd();
+  const entryComponent = entries.map((entry) => {
+    const comp = (<article>{entry.id || null}: {entry.name || "Unknown"} ex {entry.house || "Orbus"}</article>)
+    return comp;
+  });
+
+  return (
+    <section>
+    <main>Person List</main>
+    </section>
+  );
+}
+
+
 export const Covenant = (props) => {
   console.group(`${props.mode} Covenant: ${(props.name || props.value && props.value.name)}`);
   const data = {
-    name: props.name || props.value && props.value.name,
-    magi: props.magi || props.value && props.value.magi || []
+    name: (props.name || props.value && props.value.name),
+    magi: (props.magi || props.value && props.value.magi || [])
   };
   
   console.table(data);
@@ -40,7 +166,7 @@ export const Covenant = (props) => {
             <Fragment>
               <div>{covenant.name}</div>
               <PersonList 
-              title="Magi" value={covenant.magi} />
+              title="Magi" value={covenant.magi || []} />
               </Fragment>);
   
       }
@@ -96,8 +222,8 @@ function Paragraph(props) {
 function Main(props) {
   const [current, setCurrent] =
   React.useState({
-    mode: (props.mode || "Covenants"),
-    modes: ["Skills", "Tribunals", "Covenants"],
+    mode: (props.mode || "Personae"),
+    modes: ["Skills", "Tribunals", "Covenants", "Personae"],
     title: props.title,
     covenants: []
   });
@@ -109,14 +235,17 @@ function Main(props) {
   const hidden = (state) => (state.mode !== current.mode);
   const getAttributes = (state) => (hidden(state) ? ["hidden"] : []);
   const covenants = (<CovenantUI label="Covenants" covenants={[new CovenantModel({name: "Fengheld", magi: [{name: "Stentorius", house: "Tremere"}, {name: "Tabanus", house: "Quernicus"}]})]}/>)
+  const people = ([["A", "B"],["Ab", "B"],["Cab", "C"]].map( ([name, house]) => ({name, house, id: `${house}.${name}`})));
   const tribunalUi = (<Title label="Tribunals" />);
+  const personae=(<Test value={people.map(JSON.stringify)} />);
   const entries = [
     {
       name: "Covenants",
       content: covenants
     },
     { name: "Skills", content: (<Paragraph>Abilities</Paragraph>) },
-    { name: "Tribunals", content: tribunalUi }
+    { name: "Tribunals", content: tribunalUi },
+    { name: "Personae", content: personae}
       ];
   console.log(`Current ${current.mode}`)
 
@@ -159,3 +288,4 @@ function Main(props) {
 const domNode = document.getElementById('react-app');
 const root = ReactDOM.createRoot(domNode);
 root.render(<Main />);
+
