@@ -11,7 +11,7 @@ export function MenuItem(props) {
   const [content, setContent] = useState({
     title: (props.value.title || ""),
     entries: [...(props.value.entries || [])],
-    open: (props.value.entries ? props.open : undefined),
+    open: (props.value.entries ? props.open == true : undefined),
     action: props.action
   });
 
@@ -20,11 +20,13 @@ export function MenuItem(props) {
    * @param event The event.
    */
   const handleSelect = (event) => {
+    alert(`Open: ${content.open}`);
     if (content.open != null) {
       // Toggle visibility.
       setContent((old) => ({ ...old, open: !(old.open) }))
     }
     if (content.action) {
+      alert('Engaging action: ${content.action}');
       if ((content.action) instanceof Function) {
         // 
         return content.action(event.target);
@@ -43,7 +45,7 @@ export function MenuItem(props) {
     <a onClick={handleSelect}>{(content.title || (<p />))
     }</a>
     {
-      content.entries && <SubMenu entries={(content.entries || [])} open={(content.open || undefined)} />
+      content.open && <SubMenu entries={(content.entries || [])} open={(content.open || undefined)} />
     }
   </li>);
 }
