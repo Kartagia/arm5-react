@@ -1,7 +1,18 @@
 import React from 'react';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 
+export function fireSelect(event, selected, handlers) {
+  alert(`Select ${selected}`);
+  if (handlers instanceof Array) {
+    return handlers.map( (handler) => (
+      fireSelect(event, selected, handler)));
+  } else if (handlers instanceof Function) {
+    return handlers(event, selected);
+  } else {
+    return false;
+  }
+}
 
 /**
  * MenuItem component.
@@ -14,6 +25,26 @@ export function MenuItem(props) {
     open: (props.value.entries ? props.open == true : undefined),
     action: props.action
   });
+  const [open, setOpen] = useState(props.value.entries ? props.open == true : undefined);
+  
+  const fireAction = (event, action) => {
+    if (action) {
+      alert('Engaging action: ${action}');
+      if ((action) instanceof Function) {
+        // Performing the action.
+        const result = action(event.target);
+        if (props.onAction) {
+          // Firing the action
+          return props.onAction(event, result);
+        } else {
+          return result;
+        }
+      } else if (props.onAction) {
+        // Firing on action.
+        return props.onAction(event, action);
+      }
+    }
+  }
 
   /**
    * Handle selection of the menu item.
@@ -21,21 +52,19 @@ export function MenuItem(props) {
    */
   const handleSelect = (event) => {
     alert(`Open: ${content.open}`);
-    if (content.open != null) {
+    if (open != null) {
       // Toggle visibility.
-      setContent((old) => ({ ...old, open: !(old.open) }))
+      setOpen(!open);
     }
-    if (content.action) {
-      alert('Engaging action: ${content.action}');
-      if ((content.action) instanceof Function) {
-        // 
-        return content.action(event.target);
-      } else if (props.onSelect) {
-        // 
-        props.onSelect(content.action);
-      }
-    }
+    fireSelect(event, content.title, props.onSelect);
   }
+  
+  const handleSubSelect = (event, action) => {
+    if (open && props.closeOnSelect) {
+      fireSelect(event, null);
+    }
+    fireAction(event, action);
+  };
   
   console.group(`MenuItem ${content.title}`);
   console.table(content);
@@ -45,7 +74,9 @@ export function MenuItem(props) {
     <a onClick={handleSelect}>{(content.title || (<p />))
     }</a>
     {
-      content.open && <SubMenu entries={(content.entries || [])} open={(content.open || undefined)} />
+      props.open && <SubMenu
+      onAction={fireAction}
+      onSelect={handleSubSelect} entries={(content.entries || [])} open={(open || undefined)} />
     }
   </li>);
 }
@@ -61,13 +92,17 @@ export function SimpleMenuItem(props) {
  */
 export function SubMenu(props) {
   console.group(`Submenu ${props.title}`)
+  console.log(`Selected: ${props.selected ? `"${props.selected}"` : "None"}`);
   console.table(props);
   console.groupEnd();
   return (
-    <ul className={props.style || 'horizontal'}>
+    <ul hidden={(props.open && props.open == false)} className={props.style || 'horizontal'}>
       {props.entries.map( (entry) => {
       console.log(`Entry ${entry.title}`)
-    return <MenuItem key={entry.title} style={props.style} value={entry} onSelect={props.onSelect} />;
+    return <MenuItem key={entry.title}
+    open={(props.selected == entry.title)}
+    onSelect={props.onSelect}
+    style={props.style} value={entry} onAction={props.onAction} />;
   })}
     </ul>
   );
@@ -76,8 +111,23 @@ export function SubMenu(props) {
 /**
  */
 export function Menu(props) {
-  console.table(props);
+  const [current, setCurrent] = useState(props.current);
+  useEffect((val) => {console.group(`Menu item changed to "${current}"`)},[current])
+  
+  
+  const selectHandler = (event, selected) => {
+    alert(`Select new menu: ${selected}`)
+    setCurrent(selected);
+  }
+  
+  const actionHandler = (event, action, payload) => {
+    alert(`Action ${action}(${payload || ""}) on ${event ? event.target : "nothing"}`)
+  }
+  
   return (<nav><SubMenu 
+  selected={current}
+  onSelect={selectHandler}
+  onAction={actionHandler}
   entries={props.entries || []} title={props.title || null} style={props.style || 'horizontal'} /></nav>);
 }
 
