@@ -1,8 +1,12 @@
-ul.vertical {
-  
+body > header {
+  height: 25%;
 }
 
-ul.horizontal {
+body > main {
+  height: 65%;
+}
+
+ul.vertical {
   list-style-type: none;
   margin: 0;
   padding: 0;
@@ -10,11 +14,29 @@ ul.horizontal {
   background-color: #333;
 }
 
-ul.horizontal > li, li.horizontal {
-  float: left;
+ul.vertical li, li.vertical {
+  display: block;
 }
 
-ul.horizontal > li a, li.horizontal a {
+ul.vertical li a, li.vertical a {
+  display: block;
+  width: 60px;
+}
+
+ul.horizontal {
+  display: flexbox;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+
+ul.horizontal li, li.horizontal {
+  display: inline;
+}
+
+ul.horizontal li a, li.horizontal a {
   display: block;
   color: silver;
   background-color: navy;
@@ -23,7 +45,7 @@ ul.horizontal > li a, li.horizontal a {
   text-decoration: none;
 }
 
-ul.horizontal > li a:hover, li.horizontal a:hover {
+nav ul > li a:hover {
   color: navy;
   background-color: silver;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useId, Fragment} from 'react';
 import ReactDOM from 'react-dom';
 
 export function fireSelect(event, selected, handlers) {
@@ -23,13 +23,14 @@ export function MenuItem(props) {
     title: (props.value.title || ""),
     entries: [...(props.value.entries || [])],
     open: (props.value.entries ? props.open == true : undefined),
-    action: props.action
+    action: props.action,
+    menuStyle: props.menuStyle || 'horizontal'
   });
   const [open, setOpen] = useState(props.value.entries ? props.open == true : undefined);
   
   const fireAction = (event, action) => {
     if (action) {
-      alert('Engaging action: ${action}');
+      alert(`Engaging action: ${action}`);
       if ((action) instanceof Function) {
         // Performing the action.
         const result = action(event.target);
@@ -70,11 +71,12 @@ export function MenuItem(props) {
   console.table(content);
   console.groupEnd();
 
-  return (<li className={content.style || 'horizontal'} >
+  return (<li className={content.menuStyle} >
     <a onClick={handleSelect}>{(content.title || (<p />))
     }</a>
     {
       props.open && <SubMenu
+      menuStyle="vertical"
       onAction={fireAction}
       onSelect={handleSubSelect} entries={(content.entries || [])} open={(open || undefined)} />
     }
@@ -93,16 +95,17 @@ export function SimpleMenuItem(props) {
 export function SubMenu(props) {
   console.group(`Submenu ${props.title}`)
   console.log(`Selected: ${props.selected ? `"${props.selected}"` : "None"}`);
+  console.log(`Style: ${props.menuStyle}`);
   console.table(props);
   console.groupEnd();
   return (
-    <ul hidden={(props.open && props.open == false)} className={props.style || 'horizontal'}>
+    <ul hidden={(props.open && props.open == false)} className={(props.menuStyle ? props.menuStyle : 'horizontal')} >
       {props.entries.map( (entry) => {
       console.log(`Entry ${entry.title}`)
     return <MenuItem key={entry.title}
     open={(props.selected == entry.title)}
     onSelect={props.onSelect}
-    style={props.style} value={entry} onAction={props.onAction} />;
+    menuStyle={props.sälenuStyle} value={entry} onAction={props.onAction} />;
   })}
     </ul>
   );
@@ -122,16 +125,49 @@ export function Menu(props) {
   
   const actionHandler = (event, action, payload) => {
     alert(`Action ${action}(${payload || ""}) on ${event ? event.target : "nothing"}`)
+    if (props.onAction) {
+      props.onAction(event, action, payload);
+    }
   }
   
   return (<nav><SubMenu 
   selected={current}
   onSelect={selectHandler}
   onAction={actionHandler}
-  entries={props.entries || []} title={props.title || null} style={props.style || 'horizontal'} /></nav>);
+  entries={props.entries || []} title={props.title || null} menuStyle={props.menuStyle || 'horizontal'} /></nav>);
+}
+
+export function ErrorView({title=undefined, code=404, message="Not found"}) {
+  return (<div>
+  <h1>{(title || `Error ${code}: ${message}`)}</h1>
+  <dl>
+  <dt>Code</dt><dd>{code}</dd>
+  <dt>Message</dt><dd>{message}</dd>
+  </dl></div>)
+}
+
+export function MyView(props) {
+  
+  return (<main>{(props.children || [])}</main>);
 }
 
 export function Main(props) {
+  const [view, setView] = useState([]);
+  const ref=useId();
+  
+  const contents = {
+    "Open": () => (<div><h1>Open</h1></div>),
+    "Save": () => (<div><h1>Save</h1></div>)
+  };
+  
+  const selectContent = (event, state, payload) => {
+    alert(`Selecting path ${state} of ${contents[state]}`)
+    if (state in contents) {
+      setView(contents[state]());
+    } else {
+      setView((()=>(<ErrorView code="404" message={`Not Found: ${state}`} />))());
+    }
+  };
   
   const menu = [
     {title: "Logo", icon: "logo.svg"},
@@ -148,7 +184,10 @@ export function Main(props) {
     ];
   
   
-  return (<Menu style="horizontal" entries={menu} /> )
+  return (<Fragment><header className={{height: "25%"}}><Menu
+  onAction={selectContent}
+  menuStyle="horizontal" entries={menu} /></header>
+  <MyView className={{height: "75%"}}>{view}</MyView></Fragment>)
 }
 
 const domNode = document.getElementById('react-app');
