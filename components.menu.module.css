@@ -1,9 +1,38 @@
-body > header {
-  height: 25%;
+#react-app {
+  display: grid;
+  width: 100%;
+  height: 90%;
+  grid-template-columns: 2fr 10fr;
+  grid-template-rows: 1fr 2fr 2fr;
+  grid-gap: 0;
 }
 
-body > main {
-  height: 65%;
+#react-app > h1:first {
+  grid-column: 1/span 2;
+  grid-row: auto / 1;
+  color: silver;
+  background-color: navy;
+  border: 1px solid silver;
+}
+
+#react-app > header {
+  grid-column: 1/span 1;
+  background-color: navy;
+  color: #a0a0a0;
+  border: 2mm ridge #c9c9c980;
+}
+
+#react-app > main {
+  grid-column: 2/ span 1;
+  background-color: #000080;
+  border: 2mm ridge #a9a9a980;
+  color: silver;
+  padding-left: 1mm;
+  padding-right: 1mm;
+}
+
+#react-app > footer {
+  grid-column: 1/span 2;
 }
 
 ul.vertical {
@@ -24,7 +53,9 @@ ul.vertical li a, li.vertical a {
 }
 
 ul.horizontal {
-  display: flexbox;
+  display: grid;
+  grid-template-columns: auto;
+  width: 100%;
   list-style-type: none;
   margin: 0;
   padding: 0;
@@ -33,7 +64,9 @@ ul.horizontal {
 }
 
 ul.horizontal li, li.horizontal {
-  display: inline;
+  grid-column: auto / span 1;
+  grid-row: auto / span 1;
+  display: grid;
 }
 
 ul.horizontal li a, li.horizontal a {
@@ -43,6 +76,10 @@ ul.horizontal li a, li.horizontal a {
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
+}
+
+nav ul  li {
+  border-bottom: 1mm solid silver;
 }
 
 nav ul > li a:hover {
