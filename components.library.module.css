@@ -1,0 +1,11 @@
+.history {
+  
+}
+
+.title {
+  font-weight: bolder;
+}
+
+.content > span+span:not(:empty)::before {
+  content: " ";
+}
