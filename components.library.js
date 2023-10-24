@@ -53,7 +53,7 @@ export function parseContents(contents = [], defaultValues = {}) {
  
  export function Book(props) {
    const [status, setStatus] = useState([(props.status || "Available"), (props.location || "Public collection")]);
-   const [contents, setContents] = useState((props.content || []));
+   const [contents, setContents] = useState(parseContents(props.content || [], props));
    useEffect(() => {
      if (props.onChange instanceof Funtion) {
        props.onChange(
@@ -65,7 +65,7 @@ export function parseContents(contents = [], defaultValues = {}) {
      }
    }, [contents]);
    return (<article className="book">
-   <header>{props.title}</header>
+   <header><em className="title">{props.title || "(unknown)"}</em> by <em className="title">{props.author || "(unknown)"}</em></header>
    <main>
     <Summary {...props} />
     {(contents.map(
