@@ -14,6 +14,35 @@ export function QualityAndLevel({ quality = null, level = null }) {
   }
 }
 
+export function Modal(props) {
+  const {opened, onClose, children, ...rest} = props;
+  const mode = (opened ? "modalOpen": "modalClosed")
+  console.log(`Redraw modal ${mode} ${opened}`)
+  if (opened) {
+  return (<div className={mode} hidden
+  onClick={ () => {
+    alert(`Closing modal ${opened}`)
+    console.log("Closing modal");
+    if (onClose) {
+      onClose();
+    }
+    setOpen(false);
+  }
+  }
+  >
+  <section className={"modalContent"}>
+  <main onClick={(e) => {
+    // Stop propagation
+  }}
+  {...rest}>
+  {children}
+  </main>
+  </section>
+  </div>);
+  } else {
+    return <div />
+  }
+}
 
 export function Content(props) {
 
@@ -84,22 +113,22 @@ export function Book(props) {
 
 export function EditBook(props) {
   const [book, setBook] = useState({ ...(props.book || {}) });
-  const [open, setOpen] = useState((!(props.hidden === true)))
+  const [opened, setOpen] = useState((!(props.hidden === true)))
   const [errors, setErrors] = useState({ ...(props.errors || {}) })
   useEffect( () => {
-    if (props.onClose && !open) {
+    if (props.onClose && !opened) {
       props.onClose();
     }
-    if (props.onOpen && open) {
+    if (props.onOpen && opened) {
       props.onOpen();
     }
     if (props.onChange) {
       props.onChange({
         propertyName: "open",
-        value: open
+        value: opened
       })
     }
-  }, [open]
+  }, [opened]
   );
   const reset = () => {
     setBook({ ...(props.book || {}) });
@@ -449,6 +478,7 @@ export function Library(props) {
 }
 
 export function Main(props) {
+  const [opened, setOpen] = useState(false);
   const [library, setLibrary] = useState({
     collections: [],
     books: [
@@ -505,7 +535,7 @@ export function Main(props) {
     pending: [],
     history: []
   });
-
+  console.log(`Modal open status: ${opened}`)
 
 
   if (typeof props.mode === "string") {
@@ -617,6 +647,31 @@ export function Main(props) {
 }
 
 
+export function QualityList(props) {
+  const [opened, setOpen] = useState(props.open == true);
+  const openModal = () => {
+    alert("opening modal")
+    setOpen(true);
+  }
+  const closeModal = () => {
+    alert("Closing modal")
+    setOpen(false);
+  }
+  return (<Fragment>
+    <Modal opened={opened} onClose={closeModal} >
+<ul>
+<li>Test <QualityAndLevel level="5" quality="6" /></li>
+<li>Test <QualityAndLevel level="5" quality="15" /></li>
+<li>Test <QualityAndLevel quality="6" /></li>
+<li>Test <QualityAndLevel level="5" /></li>
+<li>Test <QualityAndLevel /></li>
+</ul>
+</Modal>
+<input type="button" value="Show" onClick={openModal}
+ /></Fragment>
+    );
+}
+
 /* Rendering the library */
 const domNode = document.getElementById('library-app');
 const root = ReactDOM.createRoot(domNode);
@@ -626,10 +681,5 @@ root.render(<Fragment>
 
 <div className={{padding:"2mm", ['background-color']: "navy",
 color: "silver", border: "2mm solid black"}}><Main mode="Librarian"/></div>
-<ul>
-<li>Test <QualityAndLevel level="5" quality="6" /></li>
-<li>Test <QualityAndLevel level="5" quality="15" /></li>
-<li>Test <QualityAndLevel quality="6" /></li>
-<li>Test <QualityAndLevel level="5" /></li>
-<li>Test <QualityAndLevel /></li>
-</ul></Fragment>);
+<QualityList />
+</Fragment>);
