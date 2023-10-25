@@ -9,3 +9,9 @@
 .content > span+span:not(:empty)::before {
   content: " ";
 }
+
+.library {
+  background-color: navy;
+  color: silver;
+  padding: 2mm;
+}

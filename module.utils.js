@@ -116,6 +116,10 @@ export function decomposeId(id) {
   return result;
 }
 
+export function isPojo(value) {
+  return typeof value === "object" && value.constructor.name === "Object";
+}
+
 export default { ucFirst,
 composeId, decomposeId,
-escapeId, unescapeId };
+escapeId, unescapeId, isPojo };
