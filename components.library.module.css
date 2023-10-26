@@ -16,6 +16,11 @@
   padding: 2mm;
 }
 
+
+.actionBar {
+  float: right;
+}
+
 .modalOpen, .modalClosed {
   position: fixed;
   z-index: 1;
@@ -24,7 +29,8 @@
   width: 100%;
   height: 100%;
   background-color: red;
-  background-color: rgba(0,0,0,0.4)
+  background-color: rgba(0,0,0,0.4);
+  overflow: auto;
 }
 
 .modalOpen {
@@ -36,11 +42,11 @@
 }
 
 .modalContent {
-  padding: 10%;
+  margin: 10%;
+  max-width: 80%;
   width: 80%;
   border: 1mm solid #888;
-  margin: 10px auto;
-  background-color: navy;
   color: silver;
   border-radius: 10px;
+  background-color: darkblue;
 }

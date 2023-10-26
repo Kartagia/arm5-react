@@ -3,6 +3,354 @@ import { useState, useEffect, useId, Fragment } from 'react';
 import ReactDOM from 'react-dom';
 import { isPojo, ucFirst } from '././module.utils.js'
 
+// Start-include eventlistener.js
+
+/**
+ * Add event listener.
+ * @param {string} eventType The type of the event.
+ * @param {EventListener} eventListener The event listener.
+ * @return {Function?} If the adding succeeds, the unregister function. Otherwise, an undefined value.
+ */
+export function addListener(eventType, eventListener) {
+  if (eventType && eventListener instanceof Function) {
+    document.addEventListener(eventType, eventListener, false);
+    return () => {
+      document.removeEventListener(eventType, eventListener);
+    }
+  }
+}
+
+export function removeListener(eventType, eventListener) {
+  if (eventType && eventListener instanceof Function) {
+    document.removeEventListener(eventType, eventListener);
+  }
+}
+
+/**
+ * Fires an event. If the type is given, only event of the given type
+ * is dispatched.
+ * @param {Event|CustomEvent} event The dispatched event.
+ * @param {string|null} [eventType=null] The optional type of the event.
+ */
+export function fireEvent(event, eventType=null) {
+  if ((event instanceof Event || event instanceof CustomEvent) && (eventType == null || eventType === event.type)) {
+    return document.dispatchEvent(event);
+  } else {
+    return false;
+  }
+}
+
+export function fireCustomEvent(eventType, data=undefined, bubbles=false, cancelable=false,composed=false) {
+  if (eventType) {
+    console.group(`Fire Event ${eventType}`);
+    const event = new CustomEvent(eventType, {detail: data, bubbles, cancelable, composed});
+    console.table(event);
+    console.groupEnd();
+    return document.dispatch(event);
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Fires custom DOM event bubbling through DOMNodes.
+ * @template TYPE
+ * @param {string} eventType The type of the event.
+ * @param {TYPE} data The data attached to the custom event.
+  * @returm {boolean} True, iff the event was disatched and not cancelled.
+ */
+export function fireCustomDOMEvent(eventType, data) {
+  return fireCustomEvent(eventType, data, true, true, true);
+}
+
+/**
+ * Fires custom DOM event bubbling through React nodes.
+ * @template TYPE
+ * @param {string} eventType The type of the event.
+ * @param {TYPE} data The data attached to the custom event.
+ * @param {boolean} [cancellable=true] Is the event cancelable
+  * @returm {boolean} True, iff the event was disatched and not cancelled.⁰
+ */
+export function fireCustomUIEvent(eventType, data, cancellable=true) {
+  return fireCustomEvent(eventType, data, true, cancelable, false);
+}
+
+// End-include eventLiatener.js
+
+// Start-include Modal.jsx
+// Replaced import {addListener, removeListener, fireCustomUIEvent} from 'eventListeners.js'
+
+/**
+ * The name of an action.
+ * @typedef {string} ActionName
+ */
+
+/**
+ * An action definition.
+ *
+ * @typedef {Object} ActionDef
+ * @property {ActionName} name The name of the action.
+ * @property {Function} onClick The action performed. 7f the function returns truthly value, it is used as payload.
+ * @property {Function|POJO} [defaultPayload] The default payload for ActionEvent. If function, it should return the payload when called with event.
+ * @property {string} [icon] The button icon image
+ * @property {string} [caption] The action button text.
+ */
+
+/**
+ * @typedef {ActionDef|ActionName} Action The action.
+ */
+ 
+ /**
+  * @template PAYLOAD
+  * @typedef {Object} ActionEventData The action even data.
+  * @property {ActionName} action The action name.
+  * @property {PAYLOAD}¡[payload] The action payload.
+  */
+
+/**
+ * Action Event contains action name and possible payload as its detail.
+ * @template {PAYLOAD}
+ * @typedef {CustomEvent} ActionEvent
+ * @property {ActionEventData<PAYLOAD>} detail The event data.
+ */
+ 
+ /**
+  * Fires an action event.
+  * @param {ActionName) action The name of the action.
+  * @param {PAYLOAD} [oayload=null] The payload of the action.
+  * @returm {boolean} True, iff the event was disatched and not cancelled.
+  */
+ export function fireActionEvent(action, payload=null) {
+   
+   return action && fireCustomUIEvent("action", {
+     action, payload
+   });
+   
+ }
+ 
+ /**
+  * Log action event.
+  * @param {ActionEvent} e The logged event.
+  */
+ export const logActionEvent =  (e) => {
+   const { action, payload } = e.detail || {};
+    console.group(`ActionBar Event`);
+    if (action) {
+      console.log("Action", action, ...(payload ? ["With payload", payload] : ["Without payload"]))
+    } else {
+      console.error(`Invalid action event: Missing Action Name `)
+    }
+    console.table(e);
+    console.groupEnd();
+  };
+
+/**
+ * @param {Action} action The action of the component.
+ * @param {Function} [onAction] The action event listener
+ * @param {(Array<Action|[string, Action]|ActionName>|Map<ActionName, Action>)> [knownActions] The known actions replacing their action nanes.
+ */
+export const ActionComponent = (props) => {
+  useEffect(() => {
+    if (props.onAction) {
+      document.addEventListener("action", props.onAction);
+    }
+    return () => {
+      if (props.onAction) {
+        document.removeEventListener("action", props.onAction);
+      }
+    }
+  }, [props.onAction]);
+  
+  const id = useId();
+  const { onAction, action, knownActions } = props;
+  
+  console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")}`)
+  if (action) {
+    const actionHandler =
+      (e) => {
+        console.group(`ActionButton ${action.name} handling ${e.type}Event`);
+        
+        const defaultPayload = (action.defaultPayload instanceof Function ? action.defaultPayload(e) : action.defaultPayload) || null
+        console.table({defaultPayload});
+        const payload = (action.onClick && action.onClick(e)) || defaultPayload;
+        console.table({payload})
+        console.groupEnd();
+        fireActionEvent(action.name, payload)
+      };
+    return (<button type="button" onClick={actionHandler}
+             value={action.name
+            }>{action.icon && <img aria-hidden="true" src={action.icon}  />}{action.caption || ucFirst(action.name)}</button>)
+  } else {
+    return <Fragment />
+  }
+}
+
+export const ActionBar = (props) => {
+  useEffect(() => {
+    if (props.onAction) {
+      document.addEventListener("action", onAction);
+      return () => {
+        if (props.onAction) {
+          document.removeEventListener("action", props.onAction);
+        }
+      }
+    }
+  }, [props.onAction])
+  const { actions = [], knownActions = null, onAction = null } = props;
+  console.group(`ActionBar`);
+  const actionMap = new Map();
+  const registerAction = (alias, action) => {
+    // TODO: Check alias and action
+    // TODO: Support for transitive definitions.
+    actionMap.set(alias, action)
+    console.log(`Registered action ${alias}`)
+  }
+  if (knownActions) {
+
+    if (knownActions instanceof Array) {
+      console.log("Parsing known actions from Array")
+      knownActions.map(
+        (entry) => {
+          if (entry instanceof Array) {
+            // TODO: Check array is valid
+            registerAction(entry[0], entry[1]);
+          } else {
+            // TODO: Check entry 7s string
+            registerAction(entry, { name: entry, caption: ucFirst(entry) })
+          }
+        }
+      )
+    } else if (knownActions instanceof Map) {
+      console.log("Parsing known actions from Map")
+      for ([key, value] of knownActions.entries()) {
+        registerAction(key, value);
+      }
+    } else if (knownActions instanceof Object) {
+      console.log("Parsing known actions from POJO")
+      // TODO: Getting action map from pojo
+      console.log(`Parsing not implemented`)
+    } else {
+      throw TypeError("Invalid ActionBar property knownActions")
+    }
+  }
+  console.groupEnd();
+  return (<span className={"actionBar"}>{
+     actions instanceof Array && actions.map( (action, index) => {
+       if (typeof action === "string") {
+         // The action is ref
+         return (<ActionComponent
+         key={action}
+         action={
+           (actionMap.get("action") || {name: action, caption: ucFirst(action)})
+         }
+         onAction={logActionEvent
+        
+         }/>)
+       } else if (action instanceof Object) {
+         return (<ActionComponent
+         key={action.name} action={action}
+         onAction={fireAction} />);
+       } else {
+         console.error(`Invalid action ${action}`)
+         return null;
+       }
+     })
+   }</span>)
+}
+
+/**
+ * @typedef {React.props} ModalProperties The modal properties.
+ * @property {string} [title] The modal title.
+ * @property {Array<Action>} [actions=["close"]] The action buttons of the modal header.
+ * @property {boolean} [opened=false] Is the modal open.
+ * @property {Function} [onClose] The closing of the modal event handler.
+ * @property {Function} [onClick] The modal content on click event handler. 
+ * @property {Array<React.Fragment>} children The children of the nodal.
+ * @property {any[]} ...rest The properties sent to the child component.
+ */
+
+export function TitleBar(props) {
+  const { title, onAction, actions, knownActions = [] } = props;
+  if (title && actions) {
+    return (<header><em className={"title"}>{title}</em><ActionBar actions={actions} onAction={onAction} knownActions={knownActions} /></header>);
+  } else if (title) {
+    return <header>{title && <em className={"title"}>{title}</em>}</header>
+  } else if (actions instanceof Array) {
+    <header><ActionBar actions={actions} onAction={onAction} knownActions={knownActions} /></header>
+  } else {
+    return <Fragment />;
+  }
+}
+
+/**
+ * Modal component.
+ * @param {ModalProperties} props Properties.
+ */
+export function Modal(props) {
+  const [isOpen, setOpen] = useState(props.opened == true);
+  const { title, actions, opened, onClose, onAction, children, onClick, ...rest } = props;
+  const mode = (opened ? "modalOpen" : "modalClosed");
+  console.group(`Modal ${title || ""}`)
+  if (opened) {
+
+    const closeModal = (e) => {
+      console.log(`Modal: Closing modal ${title || ""}`)
+      if (onClose) {
+        onClose(e);
+      }
+      setOpen(false);
+    }
+
+    const actionHandler = (e) => {
+      const {action, payload} = e.detail;
+      switch (action) {
+        case "close modal":
+        case "close":
+          // Closimg the modal
+          closeModal(e);
+          break;
+        default:
+          props.onAction && props.onAction(e, action, payload);
+      }
+    }
+
+    console.log(`Modal: Opening modal ${title || ""}`)
+    try {
+      const markup =
+        (() => {
+          return (<div className={mode}
+  onClick={closeModal}
+  >
+  <div className={"modalContent"}
+  onClick={(e) => {
+    // Stop propagation
+    e.stopPropagation();
+    onClick && onClick(e);
+  }}
+  {...rest}>
+  <TitleBar title={title} actions={actions} onAction={actionHandler} />
+  {children}
+  </div>
+  </div>);
+        })();
+      console.groupEnd();
+      return markup;
+    } catch (err) {
+      console.error('Failed to open: ', err);
+      console.groupEnd();
+      throw err;
+    }
+  } else {
+    console.groupEnd();
+    return <div />
+  }
+  console.groupEnd();
+}
+
+// End-incluce Modal.jsx
+
+
+
 export function QualityAndLevel({ quality = null, level = null }) {
   if (quality != null && level != null) {
     return <span><span className={level}>{level}</span>/<span className="quality">{quality}</span></span>;
@@ -14,35 +362,7 @@ export function QualityAndLevel({ quality = null, level = null }) {
   }
 }
 
-export function Modal(props) {
-  const {opened, onClose, children, ...rest} = props;
-  const mode = (opened ? "modalOpen": "modalClosed")
-  console.log(`Redraw modal ${mode} ${opened}`)
-  if (opened) {
-  return (<div className={mode} hidden
-  onClick={ () => {
-    alert(`Closing modal ${opened}`)
-    console.log("Closing modal");
-    if (onClose) {
-      onClose();
-    }
-    setOpen(false);
-  }
-  }
-  >
-  <section className={"modalContent"}>
-  <main onClick={(e) => {
-    // Stop propagation
-  }}
-  {...rest}>
-  {children}
-  </main>
-  </section>
-  </div>);
-  } else {
-    return <div />
-  }
-}
+
 
 export function Content(props) {
 
@@ -115,7 +435,7 @@ export function EditBook(props) {
   const [book, setBook] = useState({ ...(props.book || {}) });
   const [opened, setOpen] = useState((!(props.hidden === true)))
   const [errors, setErrors] = useState({ ...(props.errors || {}) })
-  useEffect( () => {
+  useEffect(() => {
     if (props.onClose && !opened) {
       props.onClose();
     }
@@ -128,8 +448,7 @@ export function EditBook(props) {
         value: opened
       })
     }
-  }, [opened]
-  );
+  }, [opened]);
   const reset = () => {
     setBook({ ...(props.book || {}) });
   }
@@ -540,20 +859,21 @@ export function Main(props) {
 
   if (typeof props.mode === "string") {
     console.group(`Library(${props.mode})`);
-    switch (props.mode) {
-      case "Collections":
-        return (
-          <Library mode="Collections" collections={library.collections}
+    const getResult = (mode) => {
+      switch (mode) {
+        case "Collections":
+          return (
+            <Library mode="Collections" collections={library.collections}
           books={library.books}
           />);
-      case "Librarian":
-        return (
-          <Library collections={library.collections}
+        case "Librarian":
+          return (
+            <Library collections={library.collections}
                   books={library.books}
                   />);
-      case "Books":
-        return (
-          <section className="library">
+        case "Books":
+          return (
+            <section className="library">
           <main>
         {
           library.books.map(
@@ -586,11 +906,11 @@ export function Main(props) {
         }
         </main>
         </section>
-        )
-      default:
-        console.table(library.books);
-        console.groupEnd();
-        return (<section className="library">
+          )
+        default:
+          console.table(library.books);
+          console.groupEnd();
+          return (<section className="library">
         <header>Books Mode</header>
         <main>
       {library.books.map(
@@ -625,6 +945,17 @@ export function Main(props) {
       )}
       </main>
       </section>);
+      }
+
+    }
+    try {
+      const markup = getResult(props.mode);
+      console.groupEnd();
+      return markup;
+    } catch (err) {
+      console.err(`Library: Error:`, err);
+      console.groupEnd();
+      throw err;
     }
   } else {
     // Dealing with books
@@ -650,15 +981,15 @@ export function Main(props) {
 export function QualityList(props) {
   const [opened, setOpen] = useState(props.open == true);
   const openModal = () => {
-    alert("opening modal")
+    alert("Opening Quality List")
     setOpen(true);
   }
   const closeModal = () => {
-    alert("Closing modal")
+    alert("Closing Quality List")
     setOpen(false);
   }
   return (<Fragment>
-    <Modal opened={opened} onClose={closeModal} >
+    <Modal title={"Quality List"} actions={["close", "close modal"]} opened={opened} onClose={() =>{closeModal()}} >
 <ul>
 <li>Test <QualityAndLevel level="5" quality="6" /></li>
 <li>Test <QualityAndLevel level="5" quality="15" /></li>
@@ -668,8 +999,7 @@ export function QualityList(props) {
 </ul>
 </Modal>
 <input type="button" value="Show" onClick={openModal}
- /></Fragment>
-    );
+ /></Fragment>);
 }
 
 /* Rendering the library */
