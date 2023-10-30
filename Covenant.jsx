@@ -1,44 +1,36 @@
 import React from "react";
-import PropertyTypes from "prop-types";
+import ReactDOM from "react-dom";
+import PropTypes from "prop-types";
+
 import History from "./History.jsx";
-import Covenant from "./modules.covenant.js";
 
-/**
- * The covenant component properties.
- * @typedef {React.Props} CovenantProps
- * @property {Covenant} covenant The coveannt the
- */
+export function Covenant(props) {}
 
-/**
- *
- * @param {CovenantProp} props The covenant properties.
- * @returns
- */
 export default function CovenantComponent(props) {
-  const covenant = props.entry;
-  if (covenant instanceof Covenant) {
-    // The compoent is created with a covenant ifnormation.
-    // Create result
-    return (
-      <React.Fragment>
-        <h1>Covenant of {covenant.name}</h1>
-        {props.children}
-        <History entries={covenant.history ? covenant.history : []} />
-      </React.Fragment>
-    );
+  const covenant = props.covenant;
+
+  if (props.editable == true) {
+    // Create editor component.
   } else {
-    // Create a new covenant
+    // View compoennt.
     return (
       <React.Fragment>
-        <form></form>
+        <section className={"covenant"}>
+          <h1>Covenant of {covenant.name}</h1>
+          <History>
+            <p>Test child paragraph</p>
+          </History>
+        </section>
       </React.Fragment>
     );
   }
 }
 
-CovenantComponent.defaultProps = {};
+CovenantComponent.defaltProps = {
+  editable: false,
+};
 
 CovenantComponent.propTypes = {
-  entry: PropertyTypes.object,
-  children: PropertyTypes.any,
+  editable: PropTypes.bool.default,
+  covenant: PropTypes.objectOf(Covenant),
 };
