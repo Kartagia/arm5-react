@@ -219,10 +219,10 @@ export class DerivedDateField extends DateField {
             } else {
               return this.getOrThrow(sourceField.valueFromDateStruct(date, throwError),
                 new MissingDateFieldException(sourceField, "Field value could not be determined"),
-                UnsupportedDateFieldException(sourceFiled, "The date does not support the field."));
+                UnsupportedDateFieldException(sourceField, "The date does not support the field."));
             }
           });
-        return this.defaultValueExtractor(sourceFields);
+        return this.defaultValueExtractor(fieldValues);
       }
     } catch (error) {
       if (error instanceof InvalidDateException || error instanceof UnsupportedDateFieldException) {
@@ -274,14 +274,39 @@ export class DerivedDateField extends DateField {
  * @returns {Map<DateField, number>|undefined|null} The mapping containing the date field values, if the
  * given date is valid for extraction. An undefined value indicates that the value cannot be determined, 
  * and a null value indicates the value is not supported.
+ * @throws {UnsupportedDateFieldException} Any date field was unsupported.
+ * @throws {InvalidDateFieldException} Any date field was invalid.
  */
 
 /**
- * 
- * @returns DateFieldValeuExtractor<TYPE>
+ * Constructs the date field value extractor. The extractor returns the map from date field to the
+ * value of the field.
+ * @param {DateFieldValueExtractor[]} fieldExtractor The date field value extractors used to determine
+ *  the list of values returned by the extractor fucntion.
+ * @returns {DateFieldValueExtractor} Extractor extracing the values from the list. 
  */
 export function createDateFieldValueExtractor(...fieldExtractor) {
-
+  return (dateStruct, throwError = false) => {
+    /** @type {UncertainType<Map<DateField, number>>} */
+    const result = new Map();
+    fieldExtractor.forEach((extractor, index) => {
+      const extractedValue = extractor(dateStruct, true);
+      [...(extractedValue.entries())].forEach(([value, key]) => {
+        console.debug(`Adding entry ${key.fieldName} -> ${value}`);
+        if (value === undefined) {
+          if (throwError) {
+            throw new InvalidDateFieldValueException(key, value, `Invalid date field at index ${index}`);
+          }
+        } else if (value === null) {
+          if (throwError) {
+            throw new UnsupportedDateFieldException(key, `An unsupported date field at index ${index}`);
+          }
+        }
+        result.set(key, value);
+      })
+    }
+    );
+  }
 }
 
 /**
@@ -502,25 +527,69 @@ export class DateField {
    * @param {DateFieldOptions} options 
    */
   constructor(fieldName, options = {}) {
-
+    this.fieldName = fieldName;
+    if (options.minValueFunction) {
+      this.minValue = options.minValueFunction;
+    } else {
+      this.minValue = () => (1);
+    }
   }
 }
 
 /**
  * @extends Calendar
  */
+// eslint-disable-next-line no-unused-vars
 class GregorianCalendar {
 
+
+  /**
+   * The month field of the date structure.
+   */
   static get MonthField() {
-
+    return { fieldName: "month" };
   }
 
+  /**
+   * The day field of the date structure.
+   */
   static get DayField() {
-
+    return { fieldName: "day" };
   }
 
+  /**
+   * The canonical year field of the date structure.
+   */
   static get YearField() {
     return { fieldName: "year" };
+  }
+
+  static get MonthOfYearField() {
+    return new DerivedDateField("monthOfYear", {
+      valueFromDateStruct: (dateStruct, throwError = false) => {
+        try {
+          if (!([GregorianCalendar.MonthField, GregorianCalendar.YearField in dateStruct].every(
+            (field) => {
+              if (field.fieldName in dateStruct) return true;
+              else if (throwError) {
+                throw new MissingDateFieldException(field, `Missing required date field`);
+              }
+            }))) {
+            if (throwError) {
+              throw new MissingDateFieldException()
+            }
+          }
+        } catch (error) {
+          if (throwError) {
+            throw error;
+          } else {
+            return undefined;
+          }
+        }
+        return dateStruct[GregorianCalendar.MonthField.fieldName];
+      }
+    }
+    );
   }
 
   /**
@@ -572,7 +641,7 @@ class GregorianCalendar {
     parser: (value, fieldTitle = "canonical year") => {
       const result = Number.parseInt(value);
       if (Number.isInteger(value)) {
-        return true;
+        return result;
       } else {
         throw new SyntaxError(`Invalid ${fieldTitle} value`);
       }
@@ -591,7 +660,7 @@ class GregorianCalendar {
     parser: (value) => {
       const result = Number.parseInt(value);
       if (Number.isInteger(value)) {
-        return true;
+        return result;
       } else {
         throw new SyntaxError("Invalid month value");
       }
@@ -606,7 +675,8 @@ class GregorianCalendar {
     dateSourceValidator: (date) => (date instanceof Object && ["month", this.Year.fieldName].every(
       (field) => (field in date && Number.isInteger(date[field]))
     )),
-    dateValidator: (date) => ((date instanceof Object) && ([day].every((field) => (!(field in date)))) &&
+    dateValidator: (date) => ((date instanceof Object)
+      && ([GregorianCalendar.DayField.fieldName].every((field) => (!(field in date)))) &&
       (["year", "month"].every((field) => (field in date && Number.isInteger(date[field]))))),
     defaultValue: 1,
     minValue: 1,
@@ -655,7 +725,7 @@ class GregorianCalendar {
  */
 export function createFieldValidationFunction() {
 
-  return new ValidationException < DateStruct > ("Invalid date")
+  return new ValidationException("Invalid date");
 }
 
 /**
