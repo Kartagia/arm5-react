@@ -1,4 +1,9 @@
-use english;
+use utf8;
+use English;
+use IO::File;
+use Carp;
+use UNIVERSAL;
+
 ##
 ## PERL script constructing a file with imports of JSX components replaced with 
 ## imported JSX definition.
@@ -7,6 +12,69 @@ use english;
 
 my $mode = "imports";
 my %imported = {};
+
+our $JSX_DEFAULT_IMPORT = qr/^\s*import\s+(?<alias>\w+)\s+from\s+'(?<file>.*?.jsx)'\s*+(?<postmatch>(?:\/\/|\/\*|;).*)?$/;
+
+our $JSX_MULTIPLE_IMPORT = qr/^\s*import\s+\{\s*(?<imported>(?:\w+(?:\s+as\s+\w+)?)(\,\s*(?:\w+(?:\s+as\s+\w+)?))*)\s*\}\s+from\s+'(?<file>.*?.jsx)'\s*(?<postmatch>(?:\/\/|\/\*|;).*)?$/;
+
+our $SINGLE_LINE_COMMENT = qr/^\s*(?:\/\/.*|\/*.*?\*\/.*)$/;
+
+our $COMMENT_START = qr/^(?<prematch>.*?)\/\*/;
+
+our $COMMENT_END = qr/^.*?\*\/(?<postmatch>.*)$/;
+
+our $JS_IMPORT = qr/^\s*import\s+\{\s*(?<imported>(?:\w+(?:\s+as\s+\w+)?)(\,\s*(?:\w+(?:\s+as\s+\w+)?))*)\s*\}\s+from\s+'(?<file>.*?)'\s*(?<postmatch>(?:\/\/|\/\*|;).*)?$/;
+
+our $JS_DEFAULT_IMPORT = qr/^\s*import\s+(?<alias>\w+)\s+from\s+'(?<file>.*?)'\s*+(?<postmatch>(?:\/\/|\/\*|;).*)?$/;
+
+sub is_array {
+  return UNIVERSAL::isa($_[0], "ARRAY");
+}
+
+sub is_hash {
+  return UNIVERSAL::isa($_[0], "HASH");
+}
+
+# PROTO: hasImport(\%Imports, $filename, $import)
+# PARAMETERS: 
+#  %imports: The import structrure.
+#  $filename: The file name of the import.
+#  $import: Imported element as scalar or a two elemeent array with imported eleement and alias. 
+# RETURN
+#  True, if and only if the given import is already reserved.
+sub hasImport(\%$$) {
+  my($target, $file, $import) = (@_);
+  if (is_array($import)) {
+    # Import is alias - existenze of either alias or original causes import to exist.
+    return (exists ($target->{$file})) && ((exists ($target->{$file}->{$import->[0]})) || 
+    (exists ($target->{$file}->{$import->[1]})) );
+  } else {
+    # IMport is scalar.
+    return (exists $target->{$file} && exists $target->{$file}->{$import});
+  }
+}
+
+# PROTO: hasAlias(%imports, $file, $import)
+#  %imports: The import structrure.
+#  $filename: The file name of the import.
+#  $import: Imported element as scalar or a two elemeent array with imported eleement and alias. 
+# RETURNS
+#  TRue, if and only if the imports contains the alias of the import. For scalar import this is
+#  equal to the hasImport. 
+sub hasAlias(\%$$) {
+  my($target, $file, $import) = (@_);
+  if (hasImport(%$target, $file, $import)) {
+    if (is_array($import)) {
+      # Import is alias - existenze of either alias or original causes import to exist.
+      return (exists $target->{$file} && (exists $target->{$file}->{$import->[1]}));
+    } else {
+      # Import is scalar.
+      return (exists $target->{$file} && exists $target->{$file}->{$import});
+    }
+  } else {
+    return 0;
+  }
+}
 
 ## PROTO: addImports(\%Imports \@fileNames $filename @componentNames)
 sub addImport(\%\@$@) {
@@ -29,18 +97,170 @@ sub addImport(\%\@$@) {
   : ""));
 }
 
+# PROTO: readJSXFile($inh, %inputs, @filenames)
+# PARAMETERS
+#  $inh: IO::File: The input handle from which the JSX file is read.
+#  $outh: IO::File: The output handle into which the result javascript file is compiled. If undefined,
+#   nocompilation is performed. 
+#  %inputs: HASH from filenames to import structures. 
+#  @files: ARRAY of filenames. The order of loading the filenames.
+#  %options: The options. 
+# RETURNS
+#  Files: The list of files in the order of loading (new file is added to the beginning of the list)
+# DESCRIPTION
+#  Reads the input file, and collects all of its imports and exports into the 
+# inputs structure.
+sub readJSXFile($$\%\@;\%) {
+  my $inh = shift(@_);
+  my $outh = shift(@_);
+  my %imports = %{$_[1]};
+  my @files = @{$_[2]};
+  my %options = %{$_[3] || {}};
+
+  my $line;
+  my $mode = "imports";
+  my @modes = [];
+  while ( $line = $inh->readline()) {
+    if ($mode eq "imports") {
+      # We have a JSX import.
+      if ($line =~ $JSX_DEFAULT_IMPORT) {
+        if (!hasImport(%imports, $file, $alias)) {
+          # Adding a new import.
+          addImport(%imports, @files, $file, $alias);
+          
+          # Processing the imported file.
+          eval {
+            my $importedFile = IO::File->new($file, "r");
+            readJSXFile($importedFile, $outh, %imports, @files, %options);
+          };
+          
+          if (my $err = $@) {
+            confess "Could not read the file $file due $err";
+          }
+        }
+      } elsif ($line =~ $JSX_MULTIPLE_IMPORT) {
+
+      } elsif ($line =~ $JS_IMPORT) { 
+        
+        if ($options{writeImports}) {
+          # Writing imports - the JS import si only written, if it is not yet imported.
+          my ($imports, $default, $file) = %+{"imports", "default", "file"};
+          if ($imports{imports}->{$file}) {
+            # The import is imported.
+            if ($imports) {
+              # Dealing with aliases.
+              for my $import (split(/\s*,\s*/, $imports)) {
+                # Splitting imports.
+
+              }
+              if ($default) {
+                if (hasImport(%$imports, $file, $default)) {
+                  # Default is not part of the imports.
+                  printf("const %s = %s;", $default, $imports{imports}->{$file}->{imports}[0]);
+                } else {
+                  printf("%s\n", $line);
+                }
+              }
+            }
+          }
+        }  
+      }
+    } elsif ($mode eq "comment") {
+      if ($line =~ $COMMENT_END) {
+        my $postMatch = $+{postmatch};
+        $mode = pop(@modes);
+        if ($mode eq "imports" && $postMatch) {
+          # The imports ends - performing writing of imports, if the option write imports is set.
+          if ($options{writeImports}) {
+            addImports(%imports, @files);
+          }
+        }
+      }
+    }
+  }
+
+  return ( @files );
+}
+
+sub getIncludes($) {
+  my $include = shift(@_);
+  my $arrayRefImport = sub ($a) {
+    if (is_array($a)) {
+      if ($#{$a} >= 1) {
+        return sprintf("%s as %s", $a->[0], $a->[1]);
+      } elsif ($#{$a} == 0) {
+        return $a->[0];
+      } else {
+        die("Invalid import - not an two element array.")
+      }
+    } else {
+      return $a;
+    }
+  };
+  if (is_array($include)) {
+    my $imports = $include->[0];
+    if (is_array($imports)) {
+      # We do have multiple imports.
+      if ($#{$imports} > 0) {
+        return sprintf("{%s}", join(", ", map($arrayRefImport, @$imports)));
+      } else {
+        return $imports->[0];
+      }
+    } elsif (is_hash($imports)) {
+      # We do have multiple imports and a default import.
+      if (exists $imports->{default} && exists $imports->{imports}) {
+        # Both
+        return sprintf("%s, %s", 
+        $imports->{default}, getIncludes(@{$imports->{imports}}));
+      } elsif (exists $imports->{default}) {
+        # Only default.
+        return sprintf("%s", $imports->{default});
+      } else {
+        # Only import block.
+        return getIncludes(@{$imports->{imports}});
+      }
+    }
+  } else {
+    confess("An invalid import $include");
+  }
+}
+
+sub getSource($) {
+  my $include = shift(@_);
+  if (is_array($include)) {
+    return $include->[1];   
+  } else {
+    confess("An invalid import $include");
+  }
+
+}
+
+## Write imports to the current location.
+## * All Imports of JSX files has been procesed, thus we does not need to process the files.
 sub includeImports(\%\@) {
   my $imports = shift(@_);
   my $files = shift(@_);
 
-  for my $file (@$files) {
-    if ($imports->{$file}->{"read"}) {
-      printf("// File: %s already imported\n", $file);
-    } else {
-      printf(STDERR "// %s from file \"%s\"\n", join(", ", %{$imports->{$file}}), $file);
-      printf("// TODO: Add import of { %s } from %s\n", join(", ", @{$imports->{$file}->{imported}}), $file);
+  my $outh = IO::Handle->new();
+  $outh->fdopen(fileno(STDOUT), "a") || confess("Could not open standard output for writing");
+
+  $outh->printf("// BEGIN: Included component imports\n");
+
+  # Writing the imports for the imported files.
+  if (exists $imports->{includes}) {
+    for my $include (@${imports->{includes}}) {
+      $outh->printf("import %s from '%s';\n", getIncludes($include), getSource($include));
     }
   }
+
+  # Reading the imported procedures.
+  for my $file (@$files) {
+    
+  }
+
+  $outh->printf("// END: Included component imports\n");
+  $outh->flush();
+  $outh->close();
 }
 
 my @modes = [];
@@ -62,6 +282,7 @@ while (<>) {
       print($remainder);
     } elsif (/^\s*import\s+\{\s*(?<imported>(?:\w+(?:\s+as\s+\w+)?)(\,\s*(?:\w+(?:\s+as\s+\w+)?))*)\s*\}\s+from\s+'(?<file>.*?.jsx)'\s*(?:\/\/|\/\*|;|$)/) {
       # Handling multiple variable import
+      # TODO: This does not work. The regexp returns invalid imported.
       my ($imported, $default, $file) = ($+{imported}, $+{default}, $+{file});
       my @imported = ();
       for my $import (split(/\s*\,\s*/, $imported)) {
