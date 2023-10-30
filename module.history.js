@@ -1,80 +1,759 @@
+import { Exception, ValidationException, SimpleErrorDescription } from "./modules.exceptions.js";
+
+/**
+ * Is the given year leap year.
+ * @param {number} year The tested canonical gregorian year.
+ * @returns {boolean} True, if and only if the given year is leap year.
+ */
 function isLeapYear(year) {
   return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
 }
 
 /**
+ * The change of the Julian year
+ */
+const changeJulianOfYear = { month: 2, day: 21 };
+
+/**
+ * The days of months for gregorian years.
+ */
+const daysOfGregorianMonths = [31, 28, 31.30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+/**
  * The days years of a normal year.
  */
-const daysOfYears = [31, 28, 31.30, 31, 30, 31, 31, 30, 31, 30, 31].reduce(
+const daysOfGregorianYears = daysOfGregorianMonths.reduce(
   (arr, val) => {
     if (arr) {
+      // The further months.
       arr.push(arr[arr.length - 1] + (val ? val : 0));
     } else {
+      // The first month.
       arr.push(val);
     }
     return arr;
   }, []);
-  
+
 /** Daysvof seasons of the gregorian
  * normal year. The first season is the winter of the previous year.
  * (The Spring equinox is assumed on 20th of March starting Spring on 21st of March.) )
  */
 const daysOfYearsOfSeasons =
-daysOfYears.reduce(
-  (arr, val, index) => {
-    const newVal = (arr?arr[arr.length-1]:0) + (val?val:0);
-    if (index % 4 == 0) {
-      arr.push(newVal);
-    } else {
-      arr[arr.length-1] += newVal;
+  daysOfGregorianYears.reduce(
+    (arr, val, index) => {
+      const newVal = (arr ? arr[arr.length - 1] : 0) + (val ? val : 0);
+      if (index % 4 == 0) {
+
+        arr.push(newVal);
+      } else {
+        arr[arr.length - 1] += newVal;
+      }
+      return arr;
+    },
+    []
+  ).map((v) => (21 - 31 - 1 + v));
+
+//Start-Include: module.calendar.js
+
+/**
+ * A function extracting value from source.
+ * @template SOURCE, RESULT
+ * @callback ValueExtractor
+ * @param {SOURCE} source The source value.
+ * @returns {RESULT} The result of the extraction.
+ * @throws {TypeError} The type of the source was invalid for extraction.
+ * @throws {RangeError} The value of hte source was invalid.
+ */
+
+/**
+ * An uncertain type may contain value, an undefined value or a null.
+ * An undefined value indicats the value cannot be determined.
+ * A null value indicates the operation is not supported.
+ * @template TYPE
+ * @typedef {TYPE|undefined|null} UncertainType
+ */
+
+/**
+ * Validate a value.
+ * @template {TYPE}
+ * @callback Validator
+ * @param {TYPE} value The validated value.
+ * @param {boolean} [throwException=false] Does the validation throw the exception elaborating
+ * the reason of failure.
+ * @returns {boolean} True, if and only if the value is valid.
+ * @throws {ValidationException<TYPE>} The validation exception describing the reason of failure.
+ */
+
+/**
+ * Validates a field, or if no field is given, the whole object.
+ * 
+ * @template TYPE, FIELD
+ * @callback FieldValidator
+ * @param {TYPE} value The validated value.
+ * @param {FIELD} [field] The validated field, if available. 
+ * @param {boolean} [throwException=false] Does the validation throw the exception elaborating the reason of
+ * the failure.
+ * @returns {boolean} True, if and only if the value is valid.
+ * @throws {FieldValidationException<FIELD, TYPE>} The validation exception describing the reason of failure.
+ * @throws {ValidationException<TYPE>} The validation exception in the case the field is not available.
+ */
+
+/**
+ * @typedef {Validator<string>} StringValidator
+ */
+
+/**
+ * A field reprenting a field value.
+ * @template TYPE
+ * @typedef Field
+ * @property {string} fieldName The name of the field.
+ * @property {TYPE} [defaultValue] The default value of the field.
+ * @property {Function} [parser] The parser of the field.
+ * @property {Funciton} [stringify] The function stringifying a field value.
+ * @property {Validator<TYPE>} [validator] The validator of a field value.
+ */
+
+/**
+ * A derived field from one or more ates.
+ * @template RESULT
+ * @typedef {Object}  DerivedField
+ * @extends {Field<RESULT>}
+ * @property {DateField[]} derivedFrom The date fields from which the field is derived.
+ * @property {ValueExtractor<DateField[], RESULT>} [defaultValueExtractor] The value extractor.
+ */
+
+
+
+/**
+ * @typedef {Object} DerivedDateFieldOptions
+ * @property {ValueExtractor<DateField[], number>} [defaultValueExtractor] The value extractor of the values.
+ * @property {ValueExtractor<DateStruct, number>} [dateStructExtractor] The extractor form date structure.
+ * 
+ */
+
+/**
+ * The derived field option keys. 
+ */
+const DERIVED_FIELD_OPTION_KEYS = ["defaultValueExtractor", "dateStructExtractor"];
+
+/**
+ * The required keys of hte derived field options.
+ */
+const DERIVED_FIELD_OPTIONS_REUIRED_KEYS = [];
+
+/**
+ * Extracts derived field options from the object.
+ * @param {object} source The source object.
+ * @return {DerivedDateFieldOptions} The derived date field options. 
+ * @throws {Error} The given source could not be converted into derived field options.
+ */
+export function getDerivedFieldOptionKeys(source) {
+  const result = /** @type {Object} */ filterFields(source, ...DERIVED_FIELD_OPTION_KEYS);
+  if (DERIVED_FIELD_OPTIONS_REUIRED_KEYS.every((field) => (field in result))) {
+    const actualResult =  /** @type {DerivedDateFieldOptions} */ result;
+    return actualResult;
+  } else {
+    throw new Error("Required field missing");
+  }
+}
+
+/**
+ * Generates a new object by filtering given fields out of the source.
+ * @param {object} source The source object.
+ * @param {string[]} fieldList The extracted fields. 
+ * @returns {object} The object containing only the filtered fields. 
+ */
+export function filterFields(source, ...fieldList) {
+  if (source instanceof Object) {
+    return Object.fromEntries([...Object.entries(source)].filter(
+      ([key]) => (fieldList.some((v) => (key === v)))
+    ));
+  } else {
+    throw new TypeError();
+  }
+}
+
+/**
+ * A derived date field. 
+ * @typedef {DerivedField<number>} DerivedDateField
+ * @extends DateField
+ */
+export class DerivedDateField extends DateField {
+
+
+  /**
+   * Create a new cderived date field.
+   * @param {string} fieldName
+   * @param {(DateField|DerivedDateField)[]} sourceFields The source fields of the derived date filed.
+   * @param {(DerivedDateFieldOptions & DateFieldOptions)} options The options of the construction.
+   */
+  constructor(fieldName, sourceFields, options) {
+    super(fieldName, filterFields(options, DATE_FIELD_OPTION_KEYS));
+    this.derivedFrom = sourceFields;
+    const myOptions = /** @type {DerivedDateFieldOptions} */ filterFields(options, DERIVED_FIELD_OPTION_KEYS);
+    this.defaultValueExtractor = myOptions.defaultValueExtractor;
+    this.dateStructExtractor = myOptions.dateStructExtractor;
+  }
+
+  /**
+   * 
+   * @param {DateStruct} date The date structure, from which the value is generated.
+   * @param {boolean} [throwError=false] Does the call throw an error instead of returning
+   * uncertian value on failure.
+   * @returns {UncertainType<number>} The value created from the date.
+   */
+  valueFromDateStruct(date, throwError = false) {
+    if (this.dateStructExtractor) {
+      const result = this.dateStructExtractor(date, throwError);
+      return this.getOrThrow(result, new InvalidDateException(),
+        new UnsupportedDateFieldException(this, `The given date does not support ${this.fieldName}`), throwError);
     }
-    return arr;
-  },
-  []
-  ).map((v) => (21-31-1+v));
+    try {
+
+      if (this.defaultValueExtractor) {
+        const fieldValues = (this.derivedFrom).map(
+          (sourceField) => {
+            if (sourceField instanceof DerivedDateField) {
+              const result = sourceField.valueFromDateStruct(date);
+              return this.getOrThrow(result);
+            } else {
+              return this.getOrThrow(sourceField.valueFromDateStruct(date, throwError),
+                new MissingDateFieldException(sourceField, "Field value could not be determined"),
+                UnsupportedDateFieldException(sourceFiled, "The date does not support the field."));
+            }
+          });
+        return this.defaultValueExtractor(sourceFields);
+      }
+    } catch (error) {
+      if (error instanceof InvalidDateException || error instanceof UnsupportedDateFieldException) {
+        throw error;
+      } else {
+        throw new UnsupportedDateFieldException(this, `The given date does nto support ${this.fieldName}`, error);
+      }
+    }
+  }
+  /**
+   * Get the value or throw an exception in case of undefined or 
+   * @template {UNKNOWN_ERROR extends Error} 
+   * @template {UNSUPPORTED_ERROR extends Error}
+   * @param {UncertainType<number>} value The converted value.
+   * @param {UNKNOWN_ERROR} unknownError The error thrown if value is uknonwn.
+   * @param {UNSUPPORTED_ERROR} unsupportedError The errro thorw if the value is not supported.
+   * @param {boolean} [throwError=false] Does the get return an undefined value.
+   * 
+   * @return {UncertainType<number>} The uncertain type.
+   * @throws {UNKNOWN_ERROR} The given date is not supported.
+   * @throws {UNSUPPORTED_ERROR} The failure is caused by a missing date field.
+   */
+  getOrThrow(value, unknownError, unsupportedError, throwError = false) {
+    if (value == null && throwError) {
+      if (value === undefined) {
+        throw unknownError;
+      } else {
+        throw unsupportedError;
+      }
+    }
+  }
+}
+
+
+/**
+ * The field value of a derived field.
+ * @template TYPE
+ * @typedef DerivedDateFieldValue
+ * @property {DateField[]} derivedFrom The date fields from which the field is derived.
+ * @property {TYPE} derivedValue The derived value from the date fields.
+ */
+
+/**
+ * The function extracting date from a date struct.
+ * @callback DateFieldValueExtractor
+ * @param {DateStruct} date The date structure, from which the value is extracted.
+ * @param {boolean} [throwError=false] Does the method throw error instead of returning
+ * an undefined or a null value.
+ * @returns {Map<DateField, number>|undefined|null} The mapping containing the date field values, if the
+ * given date is valid for extraction. An undefined value indicates that the value cannot be determined, 
+ * and a null value indicates the value is not supported.
+ */
+
+/**
+ * 
+ * @returns DateFieldValeuExtractor<TYPE>
+ */
+export function createDateFieldValueExtractor(...fieldExtractor) {
+
+}
+
+/**
+ * @template TYPE
+ * @typedef {Field<TYPE> & Object} DateFieldDefinition The definition containing types.
+ * @property {Validator<Field<any>>} [fieldValidator] The validator function validates whether the given
+ * field is equla to this field
+ * @property {Validator<DateStruct>} [dateSourceValidator] The validator function validating the given date as
+ * soruce of the field.
+ * @property {Validator<DateStruct>} [dateValidator] The validator function validating that the given date reprsents
+ * this field.
+ * @property {TYPE} [defaultValue] The default value of the field definition.
+ * @property {(DateStruct) => {TYPE|undefined}} [dateExtractor] The extractor function extracting the field value
+ * from the date struct.
+ */
+
+/**
+ * @typedef {Object} Calendar The calendar represents calendar system.
+ * @property {Array<Era|EraDefinition|undefined>} [supportedEras] The list of supported eras. If the value is absent,
+ * all eras are supported.
+ * @property {DateFieldDefinition<Month>} [months] The month definitions.
+ * @property {DateFieldDefinition<Year>} [years] The field definitions of years.
+ * @property {DateFieldDefinition<Day>} [days] The field definitions of a day. 
+ */
+
+/**
+ * @template TYPE
+ * @callback Predicate<TYPE>
+ * @param {TYPE} tested The tested value.
+ * @return {boolean} True, if and only if the tested value fulfils the predicate.
+ */
+
+/**
+ * @typedef {DateField & Object} DateFieldValue
+ * @property {string} fieldName The field of the field.
+ * @property {number|null|undefined} fieldValue The value of the field. If the value
+ * is null, tthe value is invalid. If the value is undefined, the field is not supported.
+ */
+
+/**
+ * @template TYPE The type of the calendar exception detail.
+ * Calendar exception is supertype of the calendar excpetions.
+ */
+export class CalendarException extends Exception {
+
+  /**
+   * Creates a new calendar excpetion.
+   * @param {string} [message] The mesasge, if available.
+   * @param {Error} [cause] The cause, if available.
+   * @param {TYPE} [detail] The detail, if available.
+   */
+  constructor(message = undefined, cause = undefined, detail = undefined) {
+    super(message, cause, detail);
+  }
+}
+
+/**
+ * The date exceptions. 
+ * @typedef {InvalidDateException|MissingDateFieldException|UnsupportedDateFieldException} DateException 
+ */
+
+/**
+ * The object determining a date is invalid.
+ * @extends CalendarException<DateStruct>
+ */
+export class InvalidDateException extends CalendarException {
+
+  /**
+   * Creates a new invalid date exception.
+   * @param {DateStruct} date The invalid date.
+   * @param {string} [message] @inheritdoc
+   * @param {Error} [cause] @inheritdoc
+   */
+  constructor(date, message = undefined, cause = undefined) {
+    super(message, cause, date);
+  }
+  /**
+   * Get the date of the exception.
+   */
+  get date() {
+    return super.detail;
+  }
+}
+
+/**
+ * The type of an invalid date field.
+ * @typedef {InvalidDateFieldValueException|MissingDateFieldException|UnsupportedDateFieldException} InvalidDateFieldException
+ */
+
+/**
+ * The date field value.
+ * 
+ * @extends CalendarException<DateFieldValue>
+ */
+export class InvalidDateFieldValueException extends CalendarException {
+
+  /**
+ * Creates a new invalid date field valeu messsage.
+ * @param {DateFieldValue} value Tte exception.
+ * @param {string} message 
+ * @param {Error|undefined} cause he invalid value. 
+ */
+  constructor(value, message = undefined, cause = undefined) {
+    super(message, cause, value);
+  }
+
+  /**
+   * The field name of the invalid field.
+   * @type {string}
+   */
+  get fieldName() {
+    return super.detail.fieldName;
+  }
+
+  /**
+   * The field value of the invalid field.
+   * @type {number}
+   */
+  get fieldValue() {
+    return super.detail.fieldValue;
+  }
+
+}
+
+/**
+ * An exception indicating a required date field is missing.
+ * @extends {CalendarException<DateField>}
+ */
+export class MissingDateFieldException extends CalendarException {
+
+  /**
+   * Create a missing date field exception.
+   * 
+   * @param {DateField} field 
+   * @param {string} [message] 
+   * @param {Error} [cause] 
+   */
+  constructor(field, message = undefined, cause = undefined) {
+    super(message, cause, field);
+  }
+}
+
+/**
+ * An unsupported date field exception.
+ * @extends CalendarException<DateField>
+ */
+export class UnsupportedDateFieldException extends CalendarException {
+
+  /**
+   * Creates an unsupported date field exception.
+   * 
+   * @param {DateField} field The unsupported field.
+   * @param {string} [message] The message of the exception, if supplied.
+   * @param {Error} [cause] The cause of the exception, if supplied.
+   */
+  constructor(field, message = undefined, cause = undefined) {
+    super(message, cause, field);
+  }
+
+}
+
+/**
+ * The options for date field construction.
+ * @typedef {Object} DateFieldOptions
+ * @property {ValueFunction<DateField>} [minValueFunction] The minimum value function for date field values.
+ */
+
+/**
+ * The keys of hte date field options.
+ */
+const DATE_FIELD_OPTION_KEYS = ["minValueFunction"];
+
+/**
+ * The required keys of hte date field options.
+ */
+const DATE_FIELD_OPTION_REQUIRED_KEYS = [];
+
+/**
+ * Extract date field opions from on an object.
+ * @param {Object} source The source object.
+ * @returns {DateFieldOptions} The options extracted from the result.
+ * @throws {Error} The conversion was not possible.
+ */
+export function getDateFieldOptions(source) {
+  const result = filterFields(source, ...DATE_FIELD_OPTION_KEYS);
+  if (DATE_FIELD_OPTION_REQUIRED_KEYS.every(
+    (field) => (field in result)
+  )) {
+    const actualResult = /** @type DateFieldOptions */ result;
+    return actualResult;
+  } else {
+    throw new Error("Missing required field");
+  }
+}
+
+
+/**
+ * A field of a date.
+ * @extends {Field<number>}
+ */
+export class DateField {
+
+  /**
+   * @template TYPE
+   * @callback ValueFunction
+   * @param {TYPE} value The value.
+   * @param {boolean} [throwError=false] Does the function throw error in lack of support.
+   * @return {number|undefined|null} The numeric value of the type. If the value cannot be determiend,
+   * an undefined value. If the value is invalid null. 
+   * @throws {RangeError} The given field value is not 
+   */
+
+
+  /**
+   * Create a new date field.
+   * @param {string} fieldName The name of the created field. This name is the name
+   * of the field on DateStruct and its derivate. 
+   * @param {DateFieldOptions} options 
+   */
+  constructor(fieldName, options = {}) {
+
+  }
+}
+
+/**
+ * @extends Calendar
+ */
+class GregorianCalendar {
+
+  static get MonthField() {
+
+  }
+
+  static get DayField() {
+
+  }
+
+  static get YearField() {
+    return { fieldName: "year" };
+  }
+
+  /**
+   * @template TYPE
+   * @param {Array<[Predicate<TYPE>, (Error|string|Function)]>} validators The validators forming
+   * the validation failure explanations.
+   * @param {string|Function} [message="Invalid value"] The message of the validation exception.
+   * If function, the tested value is passed to the function, and it returns the message. 
+   */
+  static createValidator(validators, message = "Invalid value",) {
+    return (value, throwException = false) => {
+      const errors = validators.map(
+        ([predicate, error]) => {
+          if (predicate(value)) {
+            if (error instanceof Function) {
+              return error(value);
+            } else {
+              return error;
+            }
+          } else {
+            return undefined;
+          }
+        }
+      ).filter((value) => (value != null));
+      if (errors.length > 0) {
+        if (throwException) {
+          const msg = (message instanceof Function ? message(value) : message);
+          throw new ValidationException(msg, errors.map(
+            (error) => {
+              return new SimpleErrorDescription({ error, value });
+            }
+          ));
+        } else {
+          return false;
+        }
+      } else {
+        return true;
+      }
+    };
+  }
+
+  /**
+   * The canonical year field.
+   * @type {Field<number>}
+   */
+  static Year = {
+    fieldName: "year",
+    fieldValidator: (field) => (field != null && ["year", "canonicalYear"].some((candidate) => (field.fieldName === candidate))),
+    parser: (value, fieldTitle = "canonical year") => {
+      const result = Number.parseInt(value);
+      if (Number.isInteger(value)) {
+        return true;
+      } else {
+        throw new SyntaxError(`Invalid ${fieldTitle} value`);
+      }
+    },
+    stringify: (value) => (JSON.stringify(value)),
+    validator: (value) => (Number.isInteger(value))
+  }
+
+  /**
+   * The month field.
+   * @type {Field<number>}
+   */
+  static Month = {
+    fieldName: "month",
+    fieldValidator: (field) => (field != null && field.fieldName === "month"),
+    parser: (value) => {
+      const result = Number.parseInt(value);
+      if (Number.isInteger(value)) {
+        return true;
+      } else {
+        throw new SyntaxError("Invalid month value");
+      }
+    },
+    stringify: (value) => (JSON.stringify(value)),
+    validator: (value) => (Number.isInteger(value))
+  }
+
+  static MonthOfYear = {
+    fieldName: "monthOfYear",
+    fieldValidator: (field) => (field != null && field.fieldName === this.fieldName),
+    dateSourceValidator: (date) => (date instanceof Object && ["month", this.Year.fieldName].every(
+      (field) => (field in date && Number.isInteger(date[field]))
+    )),
+    dateValidator: (date) => ((date instanceof Object) && ([day].every((field) => (!(field in date)))) &&
+      (["year", "month"].every((field) => (field in date && Number.isInteger(date[field]))))),
+    defaultValue: 1,
+    minValue: 1,
+    maxValue: 12
+  };
+
+  constructor() {
+    this.supportedEras = [new Era(0, "BC", "Before Christ"), new Era(1, "AD", "Common Era"), undefined];
+    this.months = [
+      {
+        ...(GregorianCalendar.MonthOfYear),
+        dateSourceValidator: (date) => (GregorianCalendar.MonthOfYear.fieldValidator(date) && (
+          date[GregorianCalendar.Month.fieldName] >= this.getFirstMonthOfYear(date[GregorianCalendar.Year.fieldName]) &&
+          date[GregorianCalendar.Month.fieldName] <= this.getLastMonthOfYear(date[GregorianCalendar.Year.fieldName])
+        ))
+      }
+    ];
+  }
+
+  getFirstMonthOfYear() {
+    return GregorianCalendar.MonthOfYear.minValue;
+  }
+
+  getLastMonthOfYear() {
+    return GregorianCalendar.MonthOfYear.maxValue;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  getFirstDayOfMonth(_month, _year) {
+    return 1;
+  }
+
+  getLastDayOfMonth(month, year) {
+    return this.getMonthsOfYear(year).getMonth(month).lastDay().value();
+  }
+
+  getMonthsOfYear(year) {
+    return this.getYear(year).getAll(GregorianCalendar.MonthField);
+  }
+}
+
+/**
+ * Create a calendar field.
+ * @template TYPE
+ * @returns {DateFieldDefinition<TYPE>}
+ */
+export function createFieldValidationFunction() {
+
+  return new ValidationException < DateStruct > ("Invalid date")
+}
+
+/**
+ * @typedef {Object} EraProperties
+ * @property {number} era The value of era.
+ * @property {string|null} [title] The title of the era.
+ * @property {string|null|undefined} [suffix] The suffix of the era.
+ * An undefined or a null suffix indicates the era is Canonical era.
+ * An empty era suffix indicates this is default era.
+ * @property {Calendar|string|undefined} [reckoning] The reckoning of the era. 
+ * @property {Array<number>} [equivalentEra=[]] The list of eras this era
+ * is equivalent to.
+ */
+
+/**
+ * Class representing a Calendar era.
+ */
+export class Era {
+
+  /**
+   * The value of the era.
+   * @type {number} 
+   */
+  #era;
+
+  /**
+   * The suffix of the era.
+   */
+  #suffix;
+
+  /**
+   * The title of the era.
+   * @type {string|undefined|null}
+   */
+  #title;
+
+  /**
+   * Create a new era.
+   * @param {EraProperties} param0 
+   */
+  constructor({ era = 1, suffix = "AD", title = null }) {
+    this.#era = era;
+    this.#suffix = suffix;
+    this.title = title;
+  }
+
+  toString() {
+    return this.#suffix;
+  }
+
+  valueOf() {
+    return this.#era;
+  }
+}
+
 
 /**
  * Class of a season.
  */
 export class Season {
-  
-  constructor(name, abbrev=null, value=undefined) {
+
+  constructor(name, abbrev = null, value = undefined) {
     this._name = name;
     this._value = value;
     this._abbrev = abbrev;
   }
-  
+
   get name() {
     return this._name;
   }
-  
+
   get abbrev() {
-    return this._abbrev || this.name.substring(0,2);
+    return this._abbrev || this.name.substring(0, 2);
   }
-  
+
   get value() {
     return this._value;
   }
-  
+
   valueOf() {
     return this.value;
   }
-  
+
   toString() {
     return this.name;
   }
-  
+
   compare(other) {
     let target;
-    if (other instanceof season) {
+    if (other instanceof Season) {
       target = other.value;
     } else {
-      target = 0+other;
+      target = 0 + other;
       if (!Number.isSafeInteger(target)) {
         return undefined;
       }
     }
-    return (this.value < target ? -1 : this.value > target ? 1 :0);
+    return (this.value < target ? -1 : this.value > target ? 1 : 0);
   }
 }
 
@@ -105,9 +784,9 @@ export const seasons = {
     return this.values().find((v) => (v.name === value || v.abbrev === value));
   },
   ofValue(value) {
-    return this.values().find((v)=> (v.value === value));
+    return this.values().find((v) => (v.value === value));
   },
-  
+
   /**
    * Converts a value to a season.
    * If the value is a string, it will be parsed.
@@ -118,18 +797,19 @@ export const seasons = {
   from(value) {
     switch (typeof value) {
       case "string":
-        return this.parse(values);
+        return this.parse(value);
       case "number":
         return this.ofValue(value);
       case "object":
         if (value instanceof Season) {
-          return this.ofValue(season.value);
+          return this.ofValue(value.value);
         }
+      // eslint-disable-next-line no-fallthrough
       default:
         return undefined;
     }
   },
-  compare(a,b) {
+  compare(a, b) {
     const comparee = this.from(a);
     const compared = this.from(b);
     if (comparee == null || compared == null) {
@@ -144,140 +824,146 @@ Object.freeze(seasons);
  * Season of yearnrepresents a season of a specific hernetic year.
  */
 export class seasonOfYear {
-  
+
   /**
    * Create Season of a julian year.
    * @param {number} year the year of the Julian calendar.
    * @param {number|Season} the season of the year.
    */
-   constructor(year, season, allSeasons = null) {
-     this._year = year;
-     this._allSeasons = allSeasons;
-     this._season = (allSeasons || this.constructor.Seasons).from(season);
-   }
-   
-   /**
-    * Get the Season implementation of the current class.
-    * @return {Class<Season>} the seasons enumeration inplementation the season ofvyear uses.
-    */
-   static get Seasons() {
-     return seasons;
-   }
-   
-   get year() {
-     return this._year;
-   }
-   
-   get season() {
-     return this._season;
-   }
-   
-   get allSeasons() {
-     return this._allSeasons || this.constructor.Seasons;
-   }
-   
-   /**
-    * @param {int} day the day of month or the day of year, if month is not defined.
-    * @param {int} year the julian year.
-    * @param {int} [month] the month of year.
-    * @return {seasonOfYear} the season of year of the given julian date. The value is 1 based unlike in Date objects.
-    */
-   static fromJulianDate(day, year, month=undefined) {
-     const isJulianLeapYear = (y) => ( y % 4 == 0);
-     
-     const dayDiff = 7 - 12 + 3 + Math.floor((year) / 100) - Math.floor((year) / 400);
-     let dayOfYear = (month == null ? 0 : (month <2 ? 0 :daysOfYears[month-2])) - dayDiff;
-     // Update the first day of year  of a month
-     if (isJulianLeapYear(year) && (dayOfYear > daysOfYears[1]))
-     {
-       dayOfYear++;
-     }
-     dayOfYear += day;
-     // Changing the leap day back to get day of a normal year
-     if (isJulianLeapYear(year) && (dayOfYear > daysOfYears[1]))
-     {
-       dayOfYear--;
-     }
-     // Normalizing the day of year
-     let amount = 0;
-     while (dayOdYear < 0) {
-       year--;
-       amount = 365 + (isLeapYear(year)?1:0);
-       dayOdYear += amount;
-     }
-     while (dayOfYear > (amount = 365 + (isLeapYear(year)?1:0)) ) {
-       dayOfYear -= amount;;
-       year++;
-     }
-     
-     // Calculating the season of the day of year of the current year.
-     let baseSeason = daysOfYearsOfSeasons.findIndex((v) => (dayOfYear <= v));
-     if (baseSeason <= 0) {
-       if (baseSeason == 0) {
-         year--;
-       }
-       season += 4;
-     }
-     return new seasonOfYear(year, baseSeason);
-   }
-   
-   /**
-    * Convert a Date into its season of year.
-    * @param {Date} other The date donverted into its season of year.
-    * @returns {seasonOfYear} The season of a hermetic year into which the date belongs 
-    */
-   static fromDate(other) {
-     // Get the day of year
-     let year = other.getFullYear();
-     let dayOfYear = other.getDate() + daysOfYears[other.getMonth()];
-     if (isLeapYear(year) && dayOfYear > daysOfYears[1]) {
-       // Add leap day to dates following it
-       dayOfYear++;
-     }
-     if (isLeapYear(year) && dayOfYear > daysOfYear[1]) {
-       // Remove leap day
-       dayOfYear--;
-     }
-     let quarter = daysOfYearsOfSeasons.findIndex((v) => (dayOfYear <= v));
-     if (quarter < 0) {
-       quarter = 4;
-     } else if (quarter == 0) {
-       year--;
-       quarter += 4;
-     }
-     return new seasonOfYear(year, quarter);
-   }
-   
-   /** Compares the current season of yeat
-    * with given value.
-    * @param {string|Date|Season|saesonOfYear} other The value the season of year is compared with.
-    * @returns {number?} The comparison result, if the other was valid. Otherwise, qn  undefined value
-    */
-   compare(other) {
-     let target = {
-       year: undefined,
-       season: undefined
-     };
-     let result = undefined;
-     switch (typeof other) {
-       case "string":
-         target = this.constructor.parse(other);
-         if (target == null) {
-           return result;
-         } else if (target.year != null) {
-           result = this.year - target.year;
-         }
-         if (result == null || result === 0) {
-           result = this.season - target.season;
-         }
-         return result;
+  constructor(year, season, allSeasons = null) {
+    this._year = year;
+    this._allSeasons = allSeasons;
+    this._season = (allSeasons || this.constructor.Seasons).from(season);
+  }
+
+  /**
+   * Get the Season implementation of the current class.
+   * @return {Class<Season>} the seasons enumeration inplementation the season ofvyear uses.
+   */
+  static get Seasons() {
+    return seasons;
+  }
+
+  get year() {
+    return this._year;
+  }
+
+  get season() {
+    return this._season;
+  }
+
+  get allSeasons() {
+    return this._allSeasons || this.constructor.Seasons;
+  }
+
+  /**
+   * @param {int} day the day of month or the day of year, if month is not defined.
+   * @param {int} year the julian year.
+   * @param {int} [month] the month of year.
+   * @return {seasonOfYear} the season of year of the given julian date. The value is 1 based unlike in Date objects.
+   */
+  static fromJulianDate(day, year, month = undefined) {
+    const isJulianLeapYear = (y) => ((y + (changeJulianOfYear.month >= 2 ? 1 : 0)) % 4 == 0);
+    const isGregorianLeapYear = (y) => isJulianLeapYear(y - (changeJulianOfYear.month >= 2 ? 1 : 0)) && (y % 100 != 0 || y % 400 == 0);
+
+    // Calculating the day difference on the first day of Julian Year (Adjusted by the start of the Julian year)
+    const dayDiff = 7 - 12 + 3 + Math.floor((year - (changeJulianOfYear.month < 2 ? 1 : 0)) / 100) - Math.floor((
+      year - (changeJulianOfYear.month < 2 ? 1 : 0)) / 400);
+    let dayOfYear = (month == null ? 0
+      : (month <= changeJulianOfYear.month ? 0 :
+        daysOfGregorianYears[changeJulianOfYear.month - 1])) - dayDiff;
+    // Update the first day of year  of a month
+    if (isGregorianLeapYear(year)
+      && (dayOfYear > daysOfGregorianYears[1])) {
+      // Adding the last day of previous month by 1 
+      dayOfYear++;
+    }
+    // Addung the day of month (or day of year)
+    dayOfYear += day;
+    // Changing the leap day back to get day of a normal year
+    if (isJulianLeapYear(year) && (dayOfYear > daysOfGregorianYears[1])) {
+      dayOfYear--;
+    }
+    // Normalizing the day of year
+    let amount = 0;
+    while (dayOfYear < 0) {
+      year--;
+      amount = 365 + (isLeapYear(year) ? 1 : 0);
+      dayOfYear += amount;
+    }
+    while (dayOfYear > (amount = 365 + (isLeapYear(year) ? 1 : 0))) {
+      dayOfYear -= amount;
+      year++;
+    }
+
+    // Calculating the season of the day of year of the current year.
+    let baseSeason = daysOfYearsOfSeasons.findIndex((v) => (dayOfYear <= v));
+    if (baseSeason <= 0) {
+      if (baseSeason == 0) {
+        year--;
+      }
+      baseSeason += 4;
+    }
+    return new seasonOfYear(year, baseSeason);
+  }
+
+  /**
+   * Convert a Date into its season of year.
+   * @param {Date} other The date donverted into its season of year.
+   * @returns {seasonOfYear} The season of a hermetic year into which the date belongs 
+   */
+  static fromDate(other) {
+    // Get the day of year
+    let year = other.getFullYear();
+    let dayOfYear = other.getDate() + daysOfGregorianYears[other.getMonth()];
+    if (isLeapYear(year) && dayOfYear > daysOfGregorianYears[1]) {
+      // Add leap day to dates following it
+      dayOfYear++;
+    }
+    if (isLeapYear(year) && dayOfYear > daysOfGregorianYears[1]) {
+      // Remove leap day
+      dayOfYear--;
+    }
+    let quarter = daysOfYearsOfSeasons.findIndex((v) => (dayOfYear <= v));
+    if (quarter < 0) {
+      quarter = 4;
+    } else if (quarter == 0) {
+      year--;
+      quarter += 4;
+    }
+    return new seasonOfYear(year, quarter);
+  }
+
+  /** Compares the current season of yeat
+   * with given value.
+   * @param {string|Date|Season|saesonOfYear} other The value the season of year is compared with.
+   * @returns {number?} The comparison result, if the other was valid. Otherwise, qn  undefined value
+   */
+  compare(other) {
+    let target = {
+      year: undefined,
+      season: undefined
+    };
+    let result = undefined;
+    switch (typeof other) {
+      case "string":
+        target = this.constructor.parse(other);
+        if (target == null) {
+          return result;
+        } else if (target.year != null) {
+          result = this.year - target.year;
+        }
+        if (result == null || result === 0) {
+          result = this.season - target.season;
+        }
+        return result;
       case "object":
         if (other instanceof Date) {
-          date = this.constructor.fromDate(other);
-  
-          result = this.year - date.year;
+          result = this.constructor.fromDate(other);
+
+          result = this.year - result.year;
           if (result === 0) {
-            result = this.season - date.season;
+            result = this.season - result.season;
           }
         } else if (other instanceof seasonOfYear) {
           result = this.year - other.year;
@@ -287,54 +973,84 @@ export class seasonOfYear {
         } else if (other instanceof Season) {
           result = this.season.compare(other);
         }
+      // eslint-disable-next-line no-fallthrough
       default:
-      return result;
-      
-     }
-   }
-   
-   /**
-    * Parse a string repeesentation
-    * to its date of year.
-    * @param {string} rep the converted string.
-    * @returns {seasonOfYear?} the season of year the given string represents. An undefined value on error.
-    */
-   static parse(rep) {
-     if (rep) {
-       const asStr = "" + rep;
-       const regex = new RegExp("^(?<season>\\p{Lu}\\p{Ll}+)\\s*(?<year>\\d+)$", "u");
-       const match = regEx.exec(asStr);
-       if (match) {
-         let quarter = seasons.from(match.groups["season"]);
-         let year = Number.parseInt(match.groups["year"]);
-         return new seasonOfYear(year, quarter);
-       } else {
-         return undefined;
-       }
-     }
-     return undefined;
-   }
-   
-   toString() {
-     return `${this.season} ${this.year}`
-   }
+        return result;
+
+    }
+  }
+
+  /**
+   * Parse a string repeesentation
+   * to its date of year.
+   * @param {string} rep the converted string.
+   * @returns {seasonOfYear?} the season of year the given string represents. An undefined value on error.
+   */
+  static parse(rep) {
+    if (rep) {
+      const asStr = "" + rep;
+      const regex = new RegExp("^(?<season>\\p{Lu}\\p{Ll}+)\\s*(?<year>\\d+)(?<era>[AD|AY|BC])?$", "u");
+      const match = regex.exec(asStr);
+      if (match) {
+        let quarter = seasons.from(match.groups["season"]);
+        let year = Number.parseInt(match.groups["year"]);
+        return new seasonOfYear(year, quarter);
+      } else {
+        return undefined;
+      }
+    }
+    return undefined;
+  }
+
+  toString() {
+    return `${this.season} ${this.year}`
+  }
 }
 
+/**
+ * Default year regular expression.
+ */
 const yearRegex = createYearRegex();
 
-function createYearRegex(max=null, min=1, requireEra=false) {
-  return `(?<year>\\d{${min},${max==null?"":max}})(?<era>AD|BC)${requireEra?"":"?"}`;
+/**
+ * Create year regular expression
+ * @param {number|null} [max] The largest allowed digit number for  a year. Null value defaults to 
+ * unlimited size.
+ * @param {number} [min=1] The smallest number of digits for a year.
+ * @param {boolean} [requireEra=false] Does the regular expression require era.
+ * @returns {RegExp} The regular expression matching a gregojulian year.
+ */
+function createYearRegex(max = null, min = 1, requireEra = false) {
+  return `(?<year>\\d{${min},${max == null ? "" : max}})(?<era>AD|BC)${requireEra ? "" : "?"}`;
 }
 
+
+/**
+ * @typedef {Object} DateStruct Date structure.
+ * @property {number} [day] The day of month or year. If the month is undefined or null,
+ * the date is day of year.
+ * @property {number|null|undefined} [month] The month of year. If the month is undefined or
+ * null, the day is day of year.
+ * @property {number} [year] The year of era or canonical year.
+ * @property {string|null|undefined} [era] The era of the years. If undefined or null, 
+ * the date is canoncial yaer. An empty value indicates the date uses the default era. 
+ */
+
+/**
+ * 
+ * @param {string} str The parsed date strign.
+ * @returns {DateStruct} The Julian date structure of the parsed date.
+ */
 function parseJulianDate(str) {
   let result = undefined;
   [
-    new RegExp("^(?<day>\\d{1,2}))\\(?:\\.(?<month>1?\\d))?\\."+yearRegex+"$"),
-    new RegExp("^(?<month>1?\\d)/"+yearRegex+"$"),
+    new RegExp("^(?<day>\\d{1,2}))\\(?:\\.(?<month>1?\\d))?\\." + yearRegex + "$"),
+    new RegExp("^(?<month>1?\\d)/" + yearRegex + "$"),
     new RegExp("^" + createYearRegex(null, null, true) + "/" +
-    "(?<month>1?\\d)$")
+      "(?<month>1?\\d)$")
   ].forEach(
-    (pattern, index) => {
+    // eslint-disable-next-line no-unused-vars
+    (pattern, _index) => {
       if (result) { return; }
       let match = pattern.exec(str);
       if (match) {
@@ -346,35 +1062,101 @@ function parseJulianDate(str) {
         };
       }
     }
-    );
-    return result;
+  );
+  return result;
 }
 
 /**
  * A date of the Julian Calendar.
  */
 export class JulianDate {
-  
+
 }
+
+//End-Include: "module.calendar.js"
 
 /**
  * Entry represents an entry with title, name, id, and description.
  */
 export class Entry {
 
-  constructor(title, date, desc, id=undefined) {
+  constructor(title, date, desc, id = undefined) {
     this.title = title;
     this.date = this.constructor.parseDate(date);
     this.description = desc;
     this.id = id;
   }
-  
-  
+
+
   static parseDate(str) {
     return Season.parse(str) || parseJulianDate(str);
   }
-  
+
 }
+
+
+/**
+ * The local variable for storing the entry ids. It is not imported, thus it is
+ * not accessible outside the module. 
+ */
+var entryId = 1;
+
+/**
+ * Create a new entry. 
+ * The creation adds the entry to the Rest service.
+ */
+export function createEntry(title, date, description = "") {
+  // TODO: check the parameters.
+
+  // Create the entry.
+  return new Entry(title, date, description, `entry${entryId++}`);
+}
+
+/**
+ * Parse given entry.
+ * @param {string|Entry|Object} entry 
+ * @returns {Entry} The parsed entry.
+ * @throws {SyntaxError} The parse failed.
+ */
+export function parseEntry(entry) {
+  if (entry instanceof Entry) {
+    return entry;
+  } else if (typeof entry === "string") {
+    let data = entry.split(":");
+    if (data && data[0].startsWith("On ")) {
+      return createEntry(data[1].substring("On ".length), data[0], data[2]);
+    } else {
+      throw new SyntaxError("Invalid entry");
+    }
+  } else if (typeof entry === "object") {
+    return createEntry(entry.name, entry.date, entry.desc);
+  }
+}
+
+/**
+ * Parses a list of entries.
+ * @param {Array<EntryType>|Entry} entries The parsed entries. 
+ * @returns {Array<Entry>} The array of entries.
+ * @throws {SyntaxError} The parsed entries was invalid.
+ */
+export function parseEntries(entries) {
+  if (entries instanceof Array) {
+    return entries.map((entry, index) => {
+      try {
+        return parseEntries(entry);
+      } catch (error) {
+        throw SyntaxError(`Invalid entry at index ${index}`, { cause: error });
+      }
+    });
+  } else if (entries instanceof Entry) {
+    return [entries];
+  } else if (entries instanceof Object) {
+    return [createEntry(entries.title, entries.date, entries.description)];
+  } else {
+    throw new SyntaxError("Invalid entries", { cause: TypeError("Invalid type of entries") });
+  }
+}
+
 
 /**
  * The package containing history related methods.
@@ -382,5 +1164,4 @@ export class Entry {
  */
 
 
- 
- 
+
