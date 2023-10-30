@@ -295,7 +295,11 @@ export function createDateFieldValueExtractor(...fieldExtractor) {
         console.debug(`Adding entry ${key.fieldName} -> ${value}`);
         if (value === undefined) {
           if (throwError) {
-            throw new InvalidDateFieldValueException(key, value, `Invalid date field at index ${index}`);
+            try {
+              throw new InvalidDateFieldValueException(createDateFieldValue(key, value), `Invalid date field at index ${index}`);
+            } catch (error) {
+              throw new InvalidDateFieldValueException(createDateFieldValue(key, undefined), `Invalid date field at index ${index}`);
+            }
           }
         } else if (value === null) {
           if (throwError) {
@@ -345,6 +349,26 @@ export function createDateFieldValueExtractor(...fieldExtractor) {
  * @property {number|null|undefined} fieldValue The value of the field. If the value
  * is null, tthe value is invalid. If the value is undefined, the field is not supported.
  */
+
+/**
+ * Create a new DateFieldValue.
+ * @constructor 
+ * @param {string} fieldName The date field name.
+ * @param {UncertainType<number>} fieldValue The field value.
+ * @returns {DateFieldValue}
+ * @throws {TypeError} The field value is not a valid field value.
+ */
+export function createDateFieldValue(fieldName, fieldValue) {
+  const type = typeof fieldValue;
+  if (["number", "undefined", "null"].some((value) => (value === type))) {
+    return {
+      fieldName, fieldValue
+    }
+  } else {
+    throw new TypeError("Invalid field value");
+  }
+
+}
 
 /**
  * @template TYPE The type of the calendar exception detail.
@@ -405,12 +429,12 @@ export class InvalidDateFieldValueException extends CalendarException {
 
   /**
  * Creates a new invalid date field valeu messsage.
- * @param {DateFieldValue} value Tte exception.
+ * @param {DateFieldValue} invalidFieldValue The invalid value of field. 
  * @param {string} message 
  * @param {Error|undefined} cause he invalid value. 
  */
-  constructor(value, message = undefined, cause = undefined) {
-    super(message, cause, value);
+  constructor(invalidFieldValue, message = undefined, cause = undefined) {
+    super(message, cause, invalidFieldValue);
   }
 
   /**
