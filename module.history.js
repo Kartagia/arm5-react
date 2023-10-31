@@ -174,7 +174,9 @@ export function filterFields(source, ...fieldList) {
 }
 
 /**
- * A derived date field. 
+ * A derived date field. The derived date field value is calcuated
+ * from other field values.
+ *
  * @typedef {DerivedField<number>} DerivedDateField
  * @extends DateField
  */
@@ -256,28 +258,68 @@ export class DerivedDateField extends DateField {
   }
   /**
    * Get the value or throw an exception in case of undefined or 
-   * @template {UNKNOWN_ERROR extends Error} 
-   * @template {UNSUPPORTED_ERROR extends Error}
+   * @template {UNKNOWN_ERROR extends InvalidDateException} 
+   * @template {UNSUPPORTED_ERROR extends UnsupportedDateFieldException}
    * @param {UncertainType<number>} value The converted value.
-   * @param {UNKNOWN_ERROR} unknownError The error thrown if value is uknonwn.
-   * @param {UNSUPPORTED_ERROR} unsupportedError The errro thorw if the value is not supported.
+   * @param {UNKNOWN_ERROR|null|undefined} unknownError The error thrown if value is uknonwn.
+   * @param {UNSUPPORTED_ERROR|null|undefined} unsupportedError The errro thorw if the value is not supported.
    * @param {boolean} [throwError=false] Does the get return an undefined value.
    * 
    * @return {UncertainType<number>} The uncertain type.
    * @throws {UNKNOWN_ERROR} The given date is not supported.
    * @throws {UNSUPPORTED_ERROR} The failure is caused by a missing date field.
    */
-  getOrThrow(value, unknownError, unsupportedError, throwError = false) {
+  getOrThrow(value, unknownError = undefined, unsupportedError = undefined, throwError = false) {
     if (value == null && throwError) {
       if (value === undefined) {
-        throw unknownError;
+        if (unknownError) throw unknownError;
+        else
+          throw new InvalidDateFieldException(this, "Ambiguous field value");
       } else {
-        throw unsupportedError;
+        if (unsupportedError) {
+          throw unsupportedError;
+        } else
+          throw new UnsupportedDateFieldException(this, "Field not supported");
       }
     }
   }
 }
 
+/**
+ * The data structure containing the information of the erroneous data.
+ * @typedef {Object} DateFieldErrorData
+ * @property {DateField} invalidField The erroneous field.
+ * @property {number} [invalidValue] The invalid value. 
+*/
+
+
+/**
+ * Exception indicating a date field is invalid.
+ *
+ * @extends CalendarException<DateFieldErrorData>
+ */
+class InvalidDateFieldException extends CalendarException {
+
+
+  /**
+   * Creates a new invalid date field exception.
+   * @param {DateField} field The erroneous field.
+   * @param {string} [message] @inheritdoc
+   * @param {Error} [cause] @inheritdoc 
+   * @param {Partial<DateFieldErrorData>} [data] The details of the error.
+   */
+  constructor(field, message = undefined, cause = undefined, data = {}) {
+    super(message, cause, { invalidField: field, ...data });
+  }
+
+  /**
+   * Get the invalid date field.
+   * @type {DateField}
+   */
+  get invalidField() {
+    return super.detail.invalidField;
+  }
+}
 
 /**
  * The field value of a derived field.
