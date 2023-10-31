@@ -180,34 +180,56 @@ export function filterFields(source, ...fieldList) {
  */
 export class DerivedDateField extends DateField {
 
+  /**
+   * @typedef {DerivedDateFieldOptions & DateFieldOptions} DerivedDateFieldConstructorOptions
+   */
 
   /**
    * Create a new cderived date field.
    * @param {string} fieldName
    * @param {(DateField|DerivedDateField)[]} sourceFields The source fields of the derived date filed.
-   * @param {(DerivedDateFieldOptions & DateFieldOptions)} options The options of the construction.
+   * @param {DerivedDateFieldConstructorOptions} options The options of the construction.
    */
   constructor(fieldName, sourceFields, options) {
     super(fieldName, filterFields(options, DATE_FIELD_OPTION_KEYS));
+
+    /**
+     * The list of the fields the value is based on.
+     * @type {{DateField|DerivedDateField}[]}
+     */
     this.derivedFrom = sourceFields;
-    const myOptions = /** @type {DerivedDateFieldOptions} */ filterFields(options, DERIVED_FIELD_OPTION_KEYS);
-    this.defaultValueExtractor = myOptions.defaultValueExtractor;
-    this.dateStructExtractor = myOptions.dateStructExtractor;
+    if (options.defaultValueExtractor) {
+      /**
+       * The default value extractor. 
+       * @type {DateFieldValueExtractor?}
+       */
+      this.defaultValueExtractor = options.defaultValueExtractor;
+    }
+    if (options.dateStructExtractor) {
+      /**
+       * The extractor of the default value.
+       * @type {ValueExtractor<DateStruct, number>?}
+       */
+      this.dateStructExtractor = options.dateStructExtractor;
+    }
   }
 
   /**
-   * 
+   * Get value of a field from a date structure.
    * @param {DateStruct} date The date structure, from which the value is generated.
    * @param {boolean} [throwError=false] Does the call throw an error instead of returning
    * uncertian value on failure.
    * @returns {UncertainType<number>} The value created from the date.
    */
   valueFromDateStruct(date, throwError = false) {
+    // Use the dateStructExtractor, if it exists.
     if (this.dateStructExtractor) {
       const result = this.dateStructExtractor(date, throwError);
-      return this.getOrThrow(result, new InvalidDateException(),
+      return this.getOrThrow(result, new InvalidDateException(`The date does not have all required fields for ${this.fieldName}`),
         new UnsupportedDateFieldException(this, `The given date does not support ${this.fieldName}`), throwError);
     }
+
+    // Using the defualt value extractor.
     try {
 
       if (this.defaultValueExtractor) {
@@ -495,7 +517,10 @@ export class UnsupportedDateFieldException extends CalendarException {
 /**
  * The options for date field construction.
  * @typedef {Object} DateFieldOptions
- * @property {ValueFunction<DateField>} [minValueFunction] The minimum value function for date field values.
+ * @property {DateFieldValueFunction<DateField>} [minValueFunction] The minimum value function for a date field values.
+ * @property {DateFieldValueFunction<DateField>} [maxValueFunction] The mximum value function for a date field values.
+ * @property {number} [minValue=1] The minimum value, if the minimum value function is not given.
+ * @property {number} [maxValue] The largest allowed value of the field, if any exists.
  */
 
 /**
@@ -535,13 +560,21 @@ export class DateField {
 
   /**
    * @template TYPE
-   * @callback ValueFunction
+   * @callback NumberValueFunction
    * @param {TYPE} value The value.
    * @param {boolean} [throwError=false] Does the function throw error in lack of support.
-   * @return {number|undefined|null} The numeric value of the type. If the value cannot be determiend,
+   * @return {UncertainType<number>} The numeric value of the type. If the value cannot be determiend,
    * an undefined value. If the value is invalid null. 
-   * @throws {RangeError} The given field value is not 
    */
+
+  /**
+   * The value function extracting a date field value.
+   * @typedef {NumberValueFunction<DateStruct>} DateFieldValueFunction
+   * @throws {InvalidDateFieldValueException} The given field value is not valid value.
+   * @throws {UnsupportedDateFieldException} THe given field value is not supported by the structure.
+   */
+
+
 
 
   /**
@@ -552,12 +585,27 @@ export class DateField {
    */
   constructor(fieldName, options = {}) {
     this.fieldName = fieldName;
-    if (options.minValueFunction) {
-      this.minValue = options.minValueFunction;
-    } else {
-      this.minValue = () => (1);
-    }
+
+    /**
+     * A function determining the minimum value of the field.
+     * @type {DateFieldValueFunction}
+     * @throws {InvalidDateFieldValueException} The given field value is not valid value.
+     * @throws {UnsupportedDateFieldException} THe given field value is not supported by the structure.
+     */
+    this.minValue = (options.minValueFunction ? options.minValueFunction : () => (options.minValue || 1));
+
+    /**
+     * A function determining the maximum value of the field.
+     * @type {DateFieldValueFunction}
+     * @throws {InvalidDateFieldValueException} The given field value is not valid value.
+     * @throws {UnsupportedDateFieldException} THe given field value is not supported by the structure.
+     */
+    this.maxValue = (options.maxValueFunction ? options.maxValueFunction : () => (options.maxValue));
+
+    this.requiredFields = (options.requiredFields || []);
+
   }
+
 }
 
 /**
