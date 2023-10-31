@@ -32,22 +32,29 @@ export function removeListener(eventType, eventListener) {
  * @param {Event|CustomEvent} event The dispatched event.
  * @param {string|null} [eventType=null] The optional type of the event.
  */
-export function fireEvent(event, eventType=null) {
+export function fireEvent(target, event, eventType=null) {
+  const doc = (target ? target : document);
+  console.log(`Firing Event ${event} on ${doc}, if type ${eventType}`)
   if ((event instanceof Event || event instanceof CustomEvent) && (eventType == null || eventType === event.type)) {
-    return document.dispatchEvent(event);
+    console.log(`Dispatching event for target ${doc.name}#${target.id}`)
+    return doc.dispatchEvent(event);
   } else {
     return false;
   }
 }
 
-export function fireCustomEvent(eventType, data=undefined, bubbles=false, cancelable=false,composed=false) {
+export function fireCustomEvent(target, eventType, data=undefined, bubbles=false, cancellable=false,composed=false) {
+  console.group(`Firing Custom Event ${eventType}`);
   if (eventType) {
-    console.group(`Fire Event ${eventType}`);
-    const event = new CustomEvent(eventType, {detail: data, bubbles, cancelable, composed});
+    console.info(`Event types:${composed?"DOM":""} ${bubbles?" bubbles":""}, ${cancellable?" cancels":""}`)
+    const event = new CustomEvent(eventType, {detail: data, bubbles, cancellable, composed});
+    console.log("Created event")
     console.table(event);
     console.groupEnd();
-    return document.dispatch(event);
+    return fireEvent(doc, event, eventType)
   } else {
+    console.log("No event thrown")
+    console.groupEnd();
     return false;
   }
 }
@@ -59,20 +66,24 @@ export function fireCustomEvent(eventType, data=undefined, bubbles=false, cancel
  * @param {TYPE} data The data attached to the custom event.
   * @returm {boolean} True, iff the event was disatched and not cancelled.
  */
-export function fireCustomDOMEvent(eventType, data) {
-  return fireCustomEvent(eventType, data, true, true, true);
+export function fireCustomDOMEvent(target, eventType, data) {
+  return fireCustomEvent(target, eventType, data, true, true, true);
 }
 
 /**
  * Fires custom DOM event bubbling through React nodes.
  * @template TYPE
+ * @param {EventSupplier?} target The target of the event.
  * @param {string} eventType The type of the event.
  * @param {TYPE} data The data attached to the custom event.
  * @param {boolean} [cancellable=true] Is the event cancelable
   * @returm {boolean} True, iff the event was disatched and not cancelled.⁰
  */
-export function fireCustomUIEvent(eventType, data, cancellable=true) {
-  return fireCustomEvent(eventType, data, true, cancelable, false);
+export function fireCustomUIEvent(target, eventType, data, cancellable=true) {
+  console.log(`Firing Custom UI ${eventType} Event for ${target} with id "${target.id}" `);
+  console.table(data);
+  
+  return fireCustomEvent(target, eventType, data, true, cancellable, false);
 }
 
 // End-include eventLiatener.js
@@ -120,9 +131,10 @@ export function fireCustomUIEvent(eventType, data, cancellable=true) {
   * @param {PAYLOAD} [oayload=null] The payload of the action.
   * @returm {boolean} True, iff the event was disatched and not cancelled.
   */
- export function fireActionEvent(action, payload=null) {
-   
-   return action && fireCustomUIEvent("action", {
+ export function fireActionEvent(target,action, payload=null) {
+   console.debug(`Firing UI action ${action} event`);
+   return action && fireCustomUIEvent(target,"action", {
+     target,
      action, payload
    });
    
@@ -133,8 +145,8 @@ export function fireCustomUIEvent(eventType, data, cancellable=true) {
   * @param {ActionEvent} e The logged event.
   */
  export const logActionEvent =  (e) => {
-   const { action, payload } = e.detail || {};
-    console.group(`ActionBar Event`);
+   const { action, payload } = (e.detail || {});
+    console.group(`ActionBar Event ${e.target && e.target.id ? `on component ${e.target.id}` : " without id"}`);
     if (action) {
       console.log("Action", action, ...(payload ? ["With payload", payload] : ["Without payload"]))
     } else {
@@ -150,9 +162,11 @@ export function fireCustomUIEvent(eventType, data, cancellable=true) {
  * @param {(Array<Action|[string, Action]|ActionName>|Map<ActionName, Action>)> [knownActions] The known actions replacing their action nanes.
  */
 export const ActionComponent = (props) => {
+  const id = useId();
   useEffect(() => {
     if (props.onAction) {
       document.addEventListener("action", props.onAction);
+      console.log(`Added action listener ${props.onAction} to component ${id}`)
     }
     return () => {
       if (props.onAction) {
@@ -160,8 +174,6 @@ export const ActionComponent = (props) => {
       }
     }
   }, [props.onAction]);
-  
-  const id = useId();
   const { onAction, action, knownActions } = props;
   
   console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")}`)
@@ -170,14 +182,15 @@ export const ActionComponent = (props) => {
       (e) => {
         console.group(`ActionButton ${action.name} handling ${e.type}Event`);
         
-        const defaultPayload = (action.defaultPayload instanceof Function ? action.defaultPayload(e) : action.defaultPayload) || null
+        const defaultPayload = (action.defaultPayload instanceof Function ? action.defaultPayload(e) : action.defaultPayload) || null;
         console.table({defaultPayload});
         const payload = (action.onClick && action.onClick(e)) || defaultPayload;
         console.table({payload})
         console.groupEnd();
-        fireActionEvent(action.name, payload)
+        fireActionEvent(document.getElementById(id), action.name, payload)
       };
-    return (<button type="button" onClick={actionHandler}
+    return (<button 
+    id={id} type="button" onClick={actionHandler}
              value={action.name
             }>{action.icon && <img aria-hidden="true" src={action.icon}  />}{action.caption || ucFirst(action.name)}</button>)
   } else {
@@ -249,7 +262,7 @@ export const ActionBar = (props) => {
        } else if (action instanceof Object) {
          return (<ActionComponent
          key={action.name} action={action}
-         onAction={fireAction} />);
+         onAction={(e) => {fireActionEvent(e.target, e)} } />);
        } else {
          console.error(`Invalid action ${action}`)
          return null;
