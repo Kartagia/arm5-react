@@ -46,7 +46,6 @@ export function useEventListener(eventType, handler, dispatcher=document) {
  */
 export const ActionComponent = (props) => {
   const id = useId();
-  useEventListener("action", props.onAction, () => (document.getElementById(id)));
   const { onAction, action, knownActions } = props;
   
   console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")}`)
@@ -63,16 +62,6 @@ export const ActionComponent = (props) => {
 }
 
 export const ActionBar = (props) => {
-  useEffect(() => {
-    if (props.onAction) {
-      document.addEventListener("action", onAction);
-      return () => {
-        if (props.onAction) {
-          document.removeEventListener("action", props.onAction);
-        }
-      }
-    }
-  }, [props.onAction])
   const { actions = [], knownActions = null, onAction = null } = props;
   console.group(`ActionBar`);
   const actionMap = new Map();
@@ -120,13 +109,11 @@ export const ActionBar = (props) => {
          action={
            (actionMap.get("action") || {name: action, caption: ucFirst(action)})
          }
-         onAction={logActionEvent
-        
-         }/>)
+         onAction={onAction}/>)
        } else if (action instanceof Object) {
          return (<ActionComponent
          key={action.name} action={action}
-         onAction={(e) => {fireActionEvent(e.target, e)} } />);
+         onAction={onAction} />);
        } else {
          console.error(`Invalid action ${action}`)
          return null;
@@ -178,16 +165,18 @@ export function Modal(props) {
       setOpen(false);
     }
 
-    const actionHandler = (e) => {
-      const {action, payload} = e.detail;
-      switch (action) {
+    const actionHandler = (e, action, payload) => {
+      const {defaultAction, defaultPayload} = e.detail;
+      if (action || defaultAction) {
+      switch ((action ? action: defaultAction)) {
         case "close modal":
         case "close":
           // Closimg the modal
           closeModal(e);
           break;
         default:
-          props.onAction && props.onAction(e, action, payload);
+          onAction && onAction(e, action || defaultAction, payload || defaultPayload);
+      }
       }
     }
 
