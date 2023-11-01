@@ -2,110 +2,57 @@ import React from 'react';
 import { useState, useEffect, useId, Fragment } from 'react';
 import ReactDOM from 'react-dom';
 import { isPojo, ucFirst } from '././module.utils.js'
-import {fireEvent, addEventListener, removeEventListener} from "./module.events.js";
-
+import {createActionHandler} from "./module.action.js";
 
 // Start-include Modal.jsx
 // Replaced import {addListener, removeListener, fireCustomUIEvent} from 'eventListeners.js'
 
 /**
- * The name of an action.
- * @typedef {string} ActionName
+ * A function supplying new values.
+ * @template TYPE
+ * @callback Supplier
+ * @returns {TYPE} The supplied value.
  */
 
 /**
- * An action definition.
- *
- * @typedef {Object} ActionDef
- * @property {ActionName} name The name of the action.
- * @property {Function} onClick The action performed. 7f the function returns truthly value, it is used as payload.
- * @property {Function|POJO} [defaultPayload] The default payload for ActionEvent. If function, it should return the payload when called with event.
- * @property {string} [icon] The button icon image
- * @property {string} [caption] The action button text.
+ * Custom hook adding event listener.
+ * @param {EventSource|Supplier<EventSource>} [dispatcher=document]
  */
-
-/**
- * @typedef {ActionDef|ActionName} Action The action.
- */
- 
- /**
-  * @template PAYLOAD
-  * @typedef {Object} ActionEventData The action even data.
-  * @property {ActionName} action The action name.
-  * @property {PAYLOAD}¡[payload] The action payload.
-  */
-
-/**
- * Action Event contains action name and possible payload as its detail.
- * @template {PAYLOAD}
- * @typedef {CustomEvent} ActionEvent
- * @property {ActionEventData<PAYLOAD>} detail The event data.
- */
- 
- /**
-  * Fires an action event.
-  * @param {ActionName) action The name of the action.
-  * @param {PAYLOAD} [oayload=null] The payload of the action.
-  * @returm {boolean} True, iff the event was disatched and not cancelled.
-  */
- export function fireActionEvent(target,action, payload=null) {
-   console.debug(`Firing UI action ${action} event`);
-   return action && fireCustomUIEvent(target,"action", {
-     target,
-     action, payload
-   });
-   
- }
- 
- /**
-  * Log action event.
-  * @param {ActionEvent} e The logged event.
-  */
- export const logActionEvent =  (e) => {
-   const { action, payload } = (e.detail || {});
-    console.group(`ActionBar Event ${e.target && e.target.id ? `on component ${e.target.id}` : " without id"}`);
-    if (action) {
-      console.log("Action", action, ...(payload ? ["With payload", payload] : ["Without payload"]))
-    } else {
-      console.error(`Invalid action event: Missing Action Name `)
+export function useEventListener(eventType, handler, dispatcher=document) {
+  if (handler) {
+    const target = (dispatcher instanceof Function ? dispatcher() : dispatcher);
+    target.addEventListener(eventType, handler);
+    console.debug(`Added ${eventType} listener to component ${dispatcher}`)
+    return () => {
+      dispatcher.removeEventListener(eventType, handler);
+      console.debug(`Removed ${eventType} listener from ${dispatcher}`)
     }
-    console.table(e);
-    console.groupEnd();
-  };
+  }
+}
+
+/**
+ * The action alias array
+ * @template TYPE
+ * @interface ActionAlias
+ * @property {string} 0 Action name.
+ * @property {Action<TYPE>|string} 1 The actual action or used alias
+ * @property {YYPE} [2] The payload.
+ */
 
 /**
  * @param {Action} action The action of the component.
  * @param {Function} [onAction] The action event listener
- * @param {(Array<Action|[string, Action]|ActionName>|Map<ActionName, Action>)> [knownActions] The known actions replacing their action nanes.
+ * @param {Array<ActionAlias>|Map<ActionName, Action>} [knownActions] The known actions replacing their action names.
  */
 export const ActionComponent = (props) => {
   const id = useId();
-  useEffect(() => {
-    if (props.onAction) {
-      document.addEventListener("action", props.onAction);
-      console.log(`Added action listener ${props.onAction} to component ${id}`)
-    }
-    return () => {
-      if (props.onAction) {
-        document.removeEventListener("action", props.onAction);
-      }
-    }
-  }, [props.onAction]);
+  useEventListener("action", props.onAction, () => (document.getElementById(id)));
   const { onAction, action, knownActions } = props;
   
   console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")}`)
   if (action) {
-    const actionHandler =
-      (e) => {
-        console.group(`ActionButton ${action.name} handling ${e.type}Event`);
-        
-        const defaultPayload = (action.defaultPayload instanceof Function ? action.defaultPayload(e) : action.defaultPayload) || null;
-        console.table({defaultPayload});
-        const payload = (action.onClick && action.onClick(e)) || defaultPayload;
-        console.table({payload})
-        console.groupEnd();
-        fireActionEvent(document.getElementById(id), action.name, payload)
-      };
+    const actionHandler = createActionHandler(onAction);
+    
     return (<button 
     id={id} type="button" onClick={actionHandler}
              value={action.name
