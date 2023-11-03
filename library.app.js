@@ -36,26 +36,70 @@ export function useEventListener(eventType, handler, dispatcher=document) {
  * @interface ActionAlias
  * @property {string} 0 Action name.
  * @property {Action<TYPE>|string} 1 The actual action or used alias
- * @property {YYPE} [2] The payload.
+ * @property {TYPE} [2] The payload.
  */
+ 
+ /**
+  * Get the actual action.
+  *
+  * @param {Action} action The source action.
+  * @param {Array<ActionAlias>|Map<string, Action>} knownActions The known action aliases.
+  * @param {Object} [param2] Options.
+  * @param {boolean} [param2.noDefault=false] Are unknown action names ignored instead of generating default action.
+  * @returns {ActionDef|undefined} The actual action for the given action.
+  */
+ function getAction(action, knownActions, {noDefault=false}={}) {
+   if (typeof action === "string") {
+    const actionMap = (knownActions instanceof Array ? new Map(knownActions.map( (entry, index) => ([entry[0], entry[1]])))
+     : (knownActions instanceof Map ? knownActions : new Map()));
+    const payloadMap = new Map(knownActions instanceof Array ? knownActions.map((entry) => ([entry[0], (entry.length >=2 ?entry[2]:undefined)])) : [])
+    let current = action;
+    let payload = payloadMap.get(action);
+    while (typeof current === "string" && actionMap.has(action)) {
+        current = actionMap.get(current);
+        if (payload === undefined) {
+          payload = payloadMap.get(current);
+        }
+    } 
+    // Returning the actual action with the action name as string.
+    if (typeof current === "string") {
+      return (noDefault?undefined:{name: current, caption: action, defaultPayload: (payload === undefined ? undefined : payload)});
+    } else if (current instanceof Object) {
+      return {...current, 
+      defaultPayload: (payload === undefined ? current.defaultPayload : payload),
+      caption: ucFirst(action)};
+    }
+    return current;
+   } else {
+     return action;
+   }
+ }
 
 /**
- * @param {Action} action The action of the component.
- * @param {Function} [onAction] The action event listener
- * @param {Array<ActionAlias>|Map<ActionName, Action>} [knownActions] The known actions replacing their action names.
+ * Component for an action.
+ * @param {Object} props 
+ * @param {Action} props.action The action of the component.
+ * @param {Function} [props.onAction] The action event listener
+ * @param {Array<[string, Action?]>|Map<string, Action|undefined>} [props.knownActions] The known actions.
  */
 export const ActionComponent = (props) => {
   const id = useId();
-  const { onAction, action, knownActions } = props;
+  const { action:actionCandidate, onAction=undefined, knownActions=[] } = props;
   
-  console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")}`)
-  if (action) {
+  const action = getAction(actionCandidate, knownActions);
+  
+  console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")} "${action && action.caption ? action.caption : ucFirst(action ? action.name : "")}"`);
+  if (action instanceof Object) {
     const actionHandler = createActionHandler(onAction);
+    const buttonHandler = 
+      (event) => {
+        onAction(event, action.name, action.defaultPayload);
+      }
     
     return (<button 
-    id={id} type="button" onClick={actionHandler}
+    id={id} type="button" onClick={buttonHandler}
              value={action.name
-            }>{action.icon && <img aria-hidden="true" src={action.icon}  />}{action.caption || ucFirst(action.name)}</button>)
+            }>{action.icon && <img aria-hidden="true" src={action.icon}  />}{action.caption || ucFirst(action.name)}</button>);
   } else {
     return <Fragment />
   }
@@ -135,12 +179,23 @@ export const ActionBar = (props) => {
 
 export function TitleBar(props) {
   const { title, onAction, actions, knownActions = [] } = props;
+  
+  const actionHandler = (event, action=undefined, payload=undefined) => {
+    if (onAction) {
+    console.debug(`Title Bar: Firing Action ${action}`);
+    onAction(event, action, payload);
+    } else {
+      console.debug(`Title Bar: Ignoring Action ${action}`);
+    }
+    
+  }
+  
   if (title && actions) {
-    return (<header><em className={"title"}>{title}</em><ActionBar actions={actions} onAction={onAction} knownActions={knownActions} /></header>);
+    return (<header><em className={"title"}>{title}</em><ActionBar actions={actions} onAction={actionHandler} knownActions={knownActions} /></header>);
   } else if (title) {
     return <header>{title && <em className={"title"}>{title}</em>}</header>
   } else if (actions instanceof Array) {
-    <header><ActionBar actions={actions} onAction={onAction} knownActions={knownActions} /></header>
+    <header><ActionBar actions={actions} onAction={actionHandler} knownActions={knownActions} /></header>
   } else {
     return <Fragment />;
   }
@@ -152,7 +207,7 @@ export function TitleBar(props) {
  */
 export function Modal(props) {
   const [isOpen, setOpen] = useState(props.opened == true);
-  const { title, actions, opened, onClose, onAction, children, onClick, ...rest } = props;
+  const { title=undefined, actions=["close"], opened=false, onClose=undefined, onAction=undefined, children=[], onClick=undefined, ...rest } = props;
   const mode = (opened ? "modalOpen" : "modalClosed");
   console.group(`Modal ${title || ""}`)
   if (opened) {
@@ -165,18 +220,28 @@ export function Modal(props) {
       setOpen(false);
     }
 
-    const actionHandler = (e, action, payload) => {
+    /**
+     * Handle action.
+     * @param {Event?} e The event triggering the action.
+     * @param {string} action The name of the action.
+     * @param {any} [payload]
+     */
+    const actionHandler = (e, action, payload=undefined) => {
       const {defaultAction, defaultPayload} = e.detail;
       if (action || defaultAction) {
       switch ((action ? action: defaultAction)) {
         case "close modal":
         case "close":
           // Closimg the modal
+          console.debug(`Modal: Handling action ${action}: Closing modal`);
           closeModal(e);
           break;
         default:
+        console.debug(`Modal: Firing action ${action}`);
           onAction && onAction(e, action || defaultAction, payload || defaultPayload);
       }
+      } else {
+        console.debug(`Modal: Handling non-Action Event`);
       }
     }
 
