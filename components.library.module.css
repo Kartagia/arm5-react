@@ -10,10 +10,22 @@
   content: " ";
 }
 
+.bookContents {
+  display: block;
+  list-style: square;
+}
+
+.bookContents > article {
+  margin-left: 2%;
+  display: list-item;
+}
+
 .library {
   background-color: navy;
   color: silver;
   padding: 2mm;
+  margin: 10mm;
+  border-radius: 2mm;
 }
 
 

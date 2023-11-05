@@ -1,8 +1,10 @@
 import React from 'react';
 import { useState, useEffect, useId, Fragment } from 'react';
 import ReactDOM from 'react-dom';
-import { isPojo, ucFirst } from '././module.utils.js'
+import { isPojo, ucFirst } from './module.utils.js'
 import {createActionHandler} from "./module.action.js";
+import PojoMap from "./module.JsonMap.js";
+import {useRef} from "react";
 
 // Start-include Modal.jsx
 // Replaced import {addListener, removeListener, fireCustomUIEvent} from 'eventListeners.js'
@@ -88,7 +90,6 @@ export const ActionComponent = (props) => {
   
   const action = getAction(actionCandidate, knownActions);
   
-  console.log(`Action Component: Action: ${(action ? action.name : "(unknown)")} "${action && action.caption ? action.caption : ucFirst(action ? action.name : "")}"`);
   if (action instanceof Object) {
     const actionHandler = createActionHandler(onAction);
     const buttonHandler = 
@@ -105,6 +106,11 @@ export const ActionComponent = (props) => {
   }
 }
 
+/**
+ * ActionBar component.
+ * @param {ActionBarProps} props
+ * @returns {ReactDOM.JSX} The ActionBar JSX component.
+ */
 export const ActionBar = (props) => {
   const { actions = [], knownActions = null, onAction = null } = props;
   console.group(`ActionBar`);
@@ -113,12 +119,12 @@ export const ActionBar = (props) => {
     // TODO: Check alias and action
     // TODO: Support for transitive definitions.
     actionMap.set(alias, action)
-    console.log(`Registered action ${alias}`)
+    console.debug(`Registered action ${alias}`)
   }
   if (knownActions) {
 
     if (knownActions instanceof Array) {
-      console.log("Parsing known actions from Array")
+      console.debug("Parsing known actions from Array")
       knownActions.map(
         (entry) => {
           if (entry instanceof Array) {
@@ -131,12 +137,12 @@ export const ActionBar = (props) => {
         }
       )
     } else if (knownActions instanceof Map) {
-      console.log("Parsing known actions from Map")
+      console.debug("Parsing known actions from Map")
       for ([key, value] of knownActions.entries()) {
         registerAction(key, value);
       }
     } else if (knownActions instanceof Object) {
-      console.log("Parsing known actions from POJO")
+      console.debug("Parsing known actions from POJO")
       // TODO: Getting action map from pojo
       console.log(`Parsing not implemented`)
     } else {
@@ -207,7 +213,8 @@ export function TitleBar(props) {
  */
 export function Modal(props) {
   const [isOpen, setOpen] = useState(props.opened == true);
-  const { title=undefined, actions=["close"], opened=false, onClose=undefined, onAction=undefined, children=[], onClick=undefined, ...rest } = props;
+  const { title=undefined, actions=["close"], opened=false,
+  onOpen=undefined, onClose=undefined, onAction=undefined, children=[], onClick=undefined, ...rest } = props;
   const mode = (opened ? "modalOpen" : "modalClosed");
   console.group(`Modal ${title || ""}`)
   if (opened) {
@@ -246,6 +253,9 @@ export function Modal(props) {
     }
 
     console.log(`Modal: Opening modal ${title || ""}`)
+    if (onOpen) {
+      onOpen(title);
+    }
     try {
       const markup =
         (() => {
@@ -294,7 +304,9 @@ export function QualityAndLevel({ quality = null, level = null }) {
 }
 
 
-
+/**
+ * Content component show the book content.
+ */
 export function Content(props) {
 
   return (<article className="content" ><span className="title"><em>{props.title || "(unknown)"}</em> by <em>{props.author || "(unknown)"}</em></span><span>{props.target}</span><span>{props.type}</span>
@@ -340,7 +352,7 @@ export function Book(props) {
   // Create result
   return (<article className="book">
    <header><em className="title">{props.title || "(unknown)"}</em> by <em className="title">{props.author || "(unknown)"}</em></header>
-   <main>
+   <main className="bookContents">
     {(contents.map(
     (content, contentIndex) => {
       const contentId = content.id || defaultContentId(contentIndex);
@@ -362,6 +374,9 @@ export function Book(props) {
    </article>);
 }
 
+/**
+ * The Book Editing component.
+ */
 export function EditBook(props) {
   const [book, setBook] = useState({ ...(props.book || {}) });
   const [opened, setOpen] = useState((!(props.hidden === true)))
@@ -533,6 +548,12 @@ export function EditBook(props) {
   );
 }
 
+/**
+ * The book list component.
+ * @param {string?} title The title of the book list.
+ * @param {Array<Book>} books The list of the books.
+ * @param {EventListener} [onChange] The change listener.
+ */
 export function Books({ title, books, onChange = null }) {
   const [edited, setEdited] = useState({});
   const [mode, setMode] = useState("View")
@@ -589,6 +610,12 @@ export function Books({ title, books, onChange = null }) {
   );
 }
 
+/**
+ * The collection list component.
+ * @param {string?} title The title of the collection list.
+ * @param {Array<Collection>} collections The list of the books.
+ * @param {EventListener} [onChange] The change listener.
+ */
 export function Collections({ title = null, collections = [], onChange = null }) {
 
   if (collections instanceof Array) {
@@ -632,10 +659,28 @@ export function Collections({ title = null, collections = [], onChange = null })
   }
 }
 
+/**
+ * The Library Component.
+ */
 export function Library(props) {
   const [collections, setCollections] = useState(
     props.collections || []);
   const [books, setBooks] = useState(props.books || []);
+
+  /**
+   * @template TYPE
+   * @typedef {CustomEvent} ChangeEcent
+   * @property {ChangePayload<TYPE>} detail The details of the change.
+   */
+
+  /**
+   * @template TYPE The payload type.
+   * @callback ChangeEventListener
+   * @param {Event|CustomEvent} event The UI event.
+   * @param {string} [change] The change.
+   * @param {TYPE} [payload] The payload.
+   * 
+   */
 
   /**
    * Fire change event.
@@ -647,14 +692,22 @@ export function Library(props) {
   const fireChange = (propName, change, payload = null) => {
     if (props.onChange instanceof Function) {
       props.onChange(propName, chsnge, payload);
-      console.log(`Fired change (${propName},${change},${payload})`)
+      console.debug(`Fired change (${propName},${change},${payload})`)
     }
   }
 
+  /**
+   * Check validity of a book.
+   */
   const validBook = (book) => {
     return typeof book === "object" && isPojo(book);
   }
 
+/**
+ * Test if a book belongs to the collection.
+ * @param {Partial<Book>} [fieldd] The field values of the wanted book.
+ * @returns {boolean} True, iff there is at least one book with the given field values.
+ */
   const hasBook = (fields = {}) => {
     const filter = (book) => {
       return validBook(book) && Object.getOwnPropertyNames(fields).every((field) => (fields[field] === book[field]))
@@ -670,7 +723,7 @@ export function Library(props) {
       } else {
         const index = books.length;
         setBooks((old) => ([...old, (id ? { ...book, id } : book)]))
-        console.log(`Added book`)
+        console.debug(`Added book with ${id}`)
         fireChange("books", "add", { index, id: (id ? id : book.id) })
       }
     } else {
@@ -678,8 +731,14 @@ export function Library(props) {
     }
   }
 
+  /**
+   * Change event listener.
+   * 
+   * @type {ChangeEventListener} 
+   */
   const handleCollectionChange = (event, change, payload = null) => {
-    alert(`Collection change ${change} with ${payload ? payload : "no payload"}`);
+    const {change:defaultChange, payload:defaultPayload} = event.detail || {};
+    alert(`Collection ${change ? `change ${change}` : `event change ${defaultChange}`} with ${payload ? payload : defaultPayload ? `event payload ${defaultPayload}` :"no payload"}`);
   }
 
 
@@ -721,15 +780,18 @@ export function Library(props) {
   };
 
   return (<section className={"library"}>
+  <TitleBar title={props.title} />
   {(props.mode === "Collections" ?
   <Collections collections={collections} 
   onChange={handleCollectionChange}/>: <Books books={books} onChange={handleBookChange} />)}
   </section>);
 }
 
-export function Main(props) {
-  const [opened, setOpen] = useState(false);
-  const [library, setLibrary] = useState({
+/**
+ * The default library.
+ * @type {ILibrary}
+ */
+const defaultLibrary = {
     collections: [],
     books: [
       {
@@ -784,9 +846,14 @@ export function Main(props) {
         }],
     pending: [],
     history: []
-  });
-  console.log(`Modal open status: ${opened}`)
+  };
 
+/**
+ * The main program.
+ */
+export function Main(props) {
+  const [opened, setOpen] = useState(false);
+  const [library, setLibrary] = useState(defaultLibrary);
 
   if (typeof props.mode === "string") {
     console.group(`Library(${props.mode})`);
@@ -794,17 +861,20 @@ export function Main(props) {
       switch (mode) {
         case "Collections":
           return (
-            <Library mode="Collections" collections={library.collections}
+            <Library 
+            title={props.title} mode="Collections" collections={library.collections}
           books={library.books}
           />);
         case "Librarian":
           return (
-            <Library collections={library.collections}
+            <Library 
+            title={props.title} collections={library.collections}
                   books={library.books}
                   />);
         case "Books":
           return (
             <section className="library">
+            <TitleBar title={props.title} />
           <main>
         {
           library.books.map(
@@ -842,7 +912,7 @@ export function Main(props) {
           console.table(library.books);
           console.groupEnd();
           return (<section className="library">
-        <header>Books Mode</header>
+        <header>{props.title}(Books)</header>
         <main>
       {library.books.map(
         (book, bookIndex) => {
@@ -891,7 +961,7 @@ export function Main(props) {
   } else {
     // Dealing with books
     return (<section className="library">
-      <header>Books</header>
+      <TitleBar title={props.title} />
       <main>{
         library.books.map(
         (book, bookIndex) => {return (<div key={`book-${bookIndex}`}>
@@ -912,15 +982,21 @@ export function Main(props) {
 export function QualityList(props) {
   const [opened, setOpen] = useState(props.open == true);
   const openModal = () => {
-    alert("Opening Quality List")
-    setOpen(true);
+    console.debug("Opening Quality List")
+    if (opened == false) {
+      setOpen(true);
+    }
   }
   const closeModal = () => {
-    alert("Closing Quality List")
-    setOpen(false);
+    console.debug("Closing Quality List")
+    if (opened) {
+      setOpen(false);
+    }
   }
   return (<Fragment>
-    <Modal title={"Quality List"} actions={["close", "close modal"]} opened={opened} onClose={() =>{closeModal()}} >
+    <Modal title={"Quality List"} actions={["close", "close modal"]} opened={opened}
+    onOpen={()=>{openModal()}} 
+    onClose={() =>{closeModal()}} >
 <ul>
 <li>Test <QualityAndLevel level="5" quality="6" /></li>
 <li>Test <QualityAndLevel level="5" quality="15" /></li>
@@ -933,14 +1009,94 @@ export function QualityList(props) {
  /></Fragment>);
 }
 
+const JsonMapComponent = (props) => {
+    const protoName = (proto) => (proto == null ? "POJO" : proto.name)
+    return (<article>{typeof props.map}({props.map instanceof Object ? protoName(Object.getPrototypeOf(props.map)):""})</article>);
+  }
+
+
+export const TestCase = ({title, children}) => {
+  return (<Fragment>
+          <article className="testCase">
+          <TitleBar title={title} />
+          <main>{...children}</main>
+          </article>
+          </Fragment>);
+}
+
+/**
+ * 
+ */
+export const JsonMapTester = (props) => {
+  const testCases = useRef();
+  const [members, setMembers] = ([]);
+  
+  try {
+  const addTest = (testCase) => {
+    if (testCase) {
+    setMembers( (old) => ([...old, testCase]))
+    }
+  }
+  
+  const map2List = (map) => {
+    return (<dl>{
+    [...(map.entries())].map(
+    ([key, value], index) => {
+      return (<Fragment key={key}>
+      <dt><pre>{key}</pre></dt>
+      <dd>{value}</dd>
+      </Fragment>);
+    }
+    )
+    }</dl>);
+  }
+  
+  const tryFromJson = async (json) => {
+    const testCaseName = `Create map from json ${typeof json}  "${json}"`;
+    const action = new Promise(
+      () => {
+        return new JsonMap(""+json);0
+      },
+      (error) => {
+        throw error;
+      }
+      );
+    action.then((map) => {
+      addTest(<TestCase title={`${testCaseName}: [Passed]`}>{map2List(map)} </TestCase>)
+    }).catch( (error) => {
+      addTest(<TestCase title={`${testCaseName}: [Failed]`}>
+        <dl>
+        <dt>Source</dt><dd><pre>{"" + json}</pre></dd>
+        <dt>Error Type</dt><dd>{(error instanceof Error? error.name : "<i>None</i>")}</dd>
+        <dt>Error</dt><dd><pre>{""+error}</pre></dd>
+        </dl></TestCase>)
+    })
+  }
+  } catch(error) {
+    console.error("Test Failed", error);
+    console.groupEnd();
+    throw error;
+  }
+  console.groupEnd();
+  tryFromJson("{}");
+  
+  return (
+    <section ref={testCases} className={{"overflow-y": "scroll"}} >
+      <h2>Json Map Test</h2>
+      {...members}
+    </section>
+    )
+}
+
 /* Rendering the library */
 const domNode = document.getElementById('library-app');
 const root = ReactDOM.createRoot(domNode);
 root.render(<Fragment>
-<Main />
-<div className={{border: "2mm solid black"}}><Main mode="Books"/></div>
+<Main title="Default View" />
+<div className={{border: "2mm solid black"}}><Main title="Books View" mode="Books"/></div>
 
-<div className={{padding:"2mm", ['background-color']: "navy",
-color: "silver", border: "2mm solid black"}}><Main mode="Librarian"/></div>
+<div className={{margin: "10mm",padding:20, ['background-color']: "cyan",
+color: "silver", border: "2px solid black"}}><Main title="Library View" mode="Librarian"/></div>
 <QualityList />
+<JsonMapTester/>
 </Fragment>);

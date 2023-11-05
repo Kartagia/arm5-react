@@ -1,7 +1,29 @@
-export function ucFirst(word) {
+
+/**
+ * An object whose toString never fails.
+ * @interface Stringifiable
+ * @method toString
+ * @returns {string} The string representation of the object.
+ */
+ 
+/**
+ * An object which can convert itself to JSON.
+ * @interface Jsonifiable
+ * @method toJSON
+ * @returns {string} The JSON string representation of thr object.
+ */
+ 
+/**
+ * Convert the first character of the word into upper case.
+ * @param {string|Stringifiable} word The uppercased word or stringifiable whose string representation is converted to the title case.
+ * @param {boolean} [titleCase=false] Does the rest of the word get lower cased.
+ * @returns {string} The word with first letter switched to the upper case.
+ */
+export function ucFirst(word, titleCase=false) {
   const target = (typeof word === "string" ? word : ""+word);
   if (target) {
-    return `${target.substring(0,1).toLocaleUpperCase()}${target.substring(1)}`;
+    return `${target.substring(0,1).toLocaleUpperCase()}${
+      (titleCase?target.substring(1).toLocaleLowerCase():target.substring(1))}`;
   } else {
     return "";
   }
@@ -28,7 +50,7 @@ export function getList(props,keys, defaultValue = undefined) {
                 if (source[subKey] instanceof Array) {
                   return {value: source[subKey], done: true};
                 } else if (source[subKey]) {
-                  throw new TypeError("Invalid key - Invalid sub key")
+                  throw new TypeError(`Invalid key - Invalid sub key at index ${index}`)
                 } else {
                   return undefined;
                 }
@@ -59,6 +81,12 @@ export function getList(props,keys, defaultValue = undefined) {
     return undefined;
   }
 }
+
+/**
+ * The POJO is a direct descendant of an Object. It is a dictionary.
+ * @typedef {Object} POJO
+ * @extends {Object}
+ */
 
 /**
  * Escape an HTML identifier.
@@ -116,6 +144,10 @@ export function decomposeId(id) {
   return result;
 }
 
+/**
+ * @param value The tested value.
+ * @returns {boolean} True, iff the value is a {POJO}
+ */
 export function isPojo(value) {
   return typeof value === "object" && value.constructor.name === "Object";
 }
