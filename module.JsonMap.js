@@ -1,10 +1,10 @@
-import {isPojo} from "./module.utils.js";
- /**
- * Tests if the value is JSON type.
- * The test does deep test for arrays.
- * @param value The tested value.
- * @returns {boolean} Trur, if and only if the value is a JSON value.
- */
+import { isPojo } from "./module.utils.js";
+/**
+* Tests if the value is JSON type.
+* The test does deep test for arrays.
+* @param value The tested value.
+* @returns {boolean} Trur, if and only if the value is a JSON value.
+*/
 export function isJSONType(value) {
   switch (typeof value) {
     case "number":
@@ -36,7 +36,7 @@ export function isJSONType(value) {
  * @extends {Map<string, VALUE>}
  */
 export default class JsonMap extends Map {
-  
+
   /**
    * Create a JsonMap from POJO.
    * @template VALUE
@@ -56,13 +56,42 @@ export default class JsonMap extends Map {
    * Get the dictionary value entries of the source.
    * @template VALUE the type of all values 
    * @param {Object} source The source object.
+   * @param {Predicate<string, VALUE>} [filter] The filter filtering the key-value pairs before
+   * validation. All values not accepted by the filter are ignored. Defaults to a filter accepting
+   * only string keys and JSON type values. 
+   * @param {Predicate<string, VALUE>} [validator] The validator validating key-value-pairs. 
    * @returns {Array<{0:string, 1:VALUE}>} The key-value-pairs of all own string property names.
+   * @throws {TypeError} The type of the source is not an object.
+   * @throws {RangeError} The operation is not lenient, and at least one of the filtered key-value pairs
+   * did not pass the validator.
    */
-  static entriesOf(source) {
-    return Object.getOwnPropertyNames(parsed).map((key) => ([key, parsed[key]])).filter((entry) => (isJSONType(entry[1])))
+  static entriesOf(source, {
+    filter = (key, value) => (key.length > 0 && isJSONType(value)), validator = () => (true), lenient = true } = {}) {
+    if (source instanceof Object && !(source instanceof Function)) {
+      if (lenient) {
+        // Lenient treats validator as an additional filter.
+        const propertyNames = Object.getOwnPropertyNames(source);
+        console.debug("Property names: ", propertyNames.join(", "));
+        return propertyNames.map((key) => ([key, source[key]])).filter(
+          ([key, value]) => (filter(key, value) && validator(key, value)));
+      } else {
+        // Non-lenient checks the validity of all filtered values, and throws exception, if  value is not valid.
+        return Object.getOwnPropertyNames(source).map((key) => ([key, source[key]])).filter(
+          ([key, value]) => (typeof key === "string" && filter(key, value))).map(
+            ([key, value]) => {
+              if (!validator(key, value)) {
+                throw new RangeError("Invalid value or key");
+              }
+              return [key, source[key]];
+            });
+      }
+    } else {
+      throw new TypeError("Invalid source: Only objects are accepted");
+    }
   }
 
   /**
+   * Parse a JSON source.
    * @param {string} source The parsed JSON.
    * @throws {SyntaxError} The source was not a stringified json map 
    */
@@ -81,9 +110,9 @@ export default class JsonMap extends Map {
    */
   constructor(source = []) {
     if (typeof source === "string") {
-      super(JsonMap.parseJsonSource(source))
+      super(JsonMap.parseJsonSource(source));
     } else {
-      super(source);
+      super([...(source)]);
     }
   }
 
@@ -120,7 +149,7 @@ export default class JsonMap extends Map {
    * @returns {boolean} True, iff the given key is calid qnd yhe value is valid value for the key.
    */
   validValue(key, value) {
-    return this.validKey(key) && (typeof value === "bigint" || value instanceof Function)
+    return this.validKey(key) && (!(typeof value === "bigint" || value instanceof Function))
   }
 
   /**
