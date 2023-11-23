@@ -6,7 +6,7 @@
  * @module calendar.gregorian
  */
 
-import JsonMap from "./module.JsonMap";
+import JsonMap from "./module.JsonMap.js";
 
 /**
  * The constant of the day of month.

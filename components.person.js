@@ -1,4 +1,4 @@
-import { useState, Frqgment, DocumentFragment } from 'react';
+import { useState, Fragment, DocumentFragment } from 'react';
 import { Covenant as CovenantModel } from './modules.covenant.js';
 import { getList } from "./module.utils.js";
 
@@ -13,14 +13,14 @@ export const Covenant = (props) => {
       }
     };
     return (<div>{props.name || props.value.name}
-    <section>
-    <header>Magi</header>
-    <main>{
-      (props.magi || (props.value && props.value.magi) || []).map(
-      (person) => (<Person value={person} onChange={updatePerson}/>)
-      )
-    }</main>
-    </section></div>);
+      <section>
+        <header>Magi</header>
+        <main>{
+          (props.magi || (props.value && props.value.magi) || []).map(
+            (person) => (<Person value={person} onChange={updatePerson} />)
+          )
+        }</main>
+      </section></div>);
   }
 };
 
@@ -85,27 +85,27 @@ export function getValueOfProp(source, keys, options = {}) {
   if (source instanceof Object) {
     const result = (
       keys instanceof Array ? keys : []).reduce(
-      (result, key, index) => {
-        if (result.done) {
-          return result;
-        }
-
-
-        if (result.value instanceof Object) {
-          if (key in result.value) {
-            return { value: result.value[key] };
-          } else {
-            return { value: undefined, done: true };
+        (result, key, index) => {
+          if (result.done) {
+            return result;
           }
 
-        } else {
-          return {
-            error: TypeError(`Invalid value at keys[${index}]`),
-            done: true
-          };
-        }
-      }, { value: source, error: TypeError("Empty key") }
-    )
+
+          if (result.value instanceof Object) {
+            if (key in result.value) {
+              return { value: result.value[key] };
+            } else {
+              return { value: undefined, done: true };
+            }
+
+          } else {
+            return {
+              error: TypeError(`Invalid value at keys[${index}]`),
+              done: true
+            };
+          }
+        }, { value: source, error: TypeError("Empty key") }
+      )
     if (result.error && !options.lenient) {
       throw result.error;
     }
@@ -126,9 +126,9 @@ export const Ability = (props) => {
   const xp = chooseProp(props, "xp", ["value", "xp"]);
   return (
     <div className={"Ability"}>
-    <div className="name">{name}</div>
-    <div className="score">{score}</div>
-    <div className="xp">{xp}</div>
+      <div className="name">{name}</div>
+      <div className="score">{score}</div>
+      <div className="xp">{xp}</div>
     </div>
   );
 }
@@ -142,24 +142,24 @@ export const Art = (props) => {
 
   return (
     <div className={"Art"}>
-        {
-          (props.mode === "form" ?
-            (
+      {
+        (props.mode === "form" ?
+          (
             <DocumentFragment>
-            <input name={"name"} type={"text"} value={art.name} readonly />
-            <input name={"score"}  type={"number"} min={0} value={art.score} />
-            <input name={"xp"} type={"number"} min={0}
-            value={art.xp} />
+              <input name={"name"} type={"text"} value={art.name} readonly />
+              <input name={"score"} type={"number"} min={0} value={art.score} />
+              <input name={"xp"} type={"number"} min={0}
+                value={art.xp} />
             </DocumentFragment>)
-            : (<DocumentFragment>
+          : (<DocumentFragment>
             <div className={"Art"}>
-                <div className="name">{art.name}</div>
-                <div className="score">{art.score}</div>
-                <div className="xp">{art.xp}</div>
-                </div>
-            </DocumentFragment>))
-        }
-        </div>
+              <div className="name">{art.name}</div>
+              <div className="score">{art.score}</div>
+              <div className="xp">{art.xp}</div>
+            </div>
+          </DocumentFragment>))
+      }
+    </div>
   );
 }
 
