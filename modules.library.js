@@ -5,9 +5,10 @@
  */
 
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref as getRef, set as setRecord, child as getChild, push as pushRecord, onValue as listenDbChange } from "firebase/database";
+import { runTransaction, getDatabase, ref as getRef, set as setRecord, child as getChild, push as pushRecord, onValue as listenDbChange } from "firebase/database";
 import { getDatabaseUrl } from ".env.db.js";
 import JsonMap from "./module.JsonMap";
+import { Entry, History } from "./module.history.js";
 
 // TODO: Replace the following with your app's Firebase project configuration
 // See: https://firebase.google.com/docs/web/learn-more#config-object
@@ -33,6 +34,7 @@ const app = initializeApp(firebaseConfig);
  * @property {BookContentType} type
  * @property {number} [quality]
  * @property {number} [level]
+ * @property {Array<Entry>|History} [history=[]]
  */
 
 /**
@@ -48,7 +50,7 @@ const app = initializeApp(firebaseConfig);
  * @typedef {TitleData & Object} Book
  * @property {Array<BookContent>} [contents] The book contents.
  * @property {Array<BookQuality>} [qualities] The booknquality modifiers.
- * @property {History} [history] The book history.
+ * @property {History|Array<Entry>} [history] The book history.
  */
 
 /**
@@ -75,12 +77,6 @@ export const BookStatuses = ["Promised", "Planned", "Written", "Illuminated", "B
   return result;
 });
 BookStatuses.freeze();
-
-/**
- * The book history.
- * @typedef {Object} History
- * @property {Entry[]} [history=[]] The history entries.
- */
 
 /**
  * The book types.
@@ -588,764 +584,20 @@ function Library() {
   };
 }
 
-/**
- * @namespace Calendar
- * @description The namespace for calendar types.
- */
-
-/**
- * @interface Calendar 
- * @memberof Calendar
- * @description The interface describing a calendar system. 
+/** 
+ * The hermetic date as a string.
+ * This can be either season, date of Julian calendar, o rdate of Hermetic calendar.
  * 
- * @method validField
- * @description TEsts if the given field is valid field for the calendar.
- * If the value is given, also tests if the given value is valid value for the field.
- * @param {CalendarField|string} field The tested field.
- * @param {Object|number|string} [value] The value of the field.
- * @returns {boolean} True, if and only if the given field is a valid field of the calendar,
- * and if given the value is valid value of the field.
- * 
- * @method getField
- * @param {CalendarField|string} field The wanted calendar field.
- * @returns {CalendarField?} The calendar field, or an undeifned value, if the field is not
- * valid field of the calendar.
- * 
- * @method parseEntry 
- * @param {string} source The parsed value.
- * @param {CalendarField} [field] The parsed field, if known. 
- * @description Parses an entry of the calendar.
- * @returns {CalendarFieldValue|CalendarDate<Calendar>|Cycle<Calendar>|Era<Calendar>|Month<Calendar>|Year<Calendar>|Day<Calendar>} 
- * The parsed element of the calendar.
- * @throws {TypeError} The type of hte parsed value was invalid.
- * @throws {SyntaxError} The parsed value was not a valid calendar entry.
- */
-/**  
- * @template {Calendar.Calendar} CALENDAR - The calendar of the field.
- * @template {string|number} VALUE - The value type.
- * @interface CalendarFieldValue
- * @memberof Calendar 
- * @description A value of a calendar field.
- * @property {string} field The defined field.
- * @property {VALUE} value The value of the field. The calendar values are
- * 1 based.
- * @property {string|CALENDAR} [calendar] The calendar of the field.
- * 
- * @method validField
- */
-/** 
- * @template {Calendar} CALENDAR - The calendar of the field.
- * @interface Year
- * @memberof Calendar 
- * @extends  CalendarFieldValue<CALENDAR,number>
- * @description Either a canonical year or a year of era.
- * @property {string} field The field name of the year. Either "CanonicalYear" or "YearOfEra".
- * @property {number} value The year.
- * @property {string} [era] The era of the year.
- * @property {Calendar} [calendar] The calendar of the year. 
- */
-
-/**
- * Create a date field.
- * @template {number|string|(name|field)} TYPE - The value type.
- * 
- * @returns {CalendarField}
- */
-function DateField(fieldName, fieldValueTypes, fieldValueValidator) {
-
-
-  return {
-    fieldName,
-    equivalentTo,
-
-  };
-}
-
-/**
- * Create a date field value.
- * @template {number|string} TYPE - The value type.
- * @param {string} field - The field.
- * @param {TYPE} value - The value.
- * @param {Calendar} calendar - The calendar of the the created date.
- * @param {Map<string, Function>} [supportedFieldsMap] - The mapping from supported field names
- * to teh functions returning the field.  
- * @returns {DateFieldValue<TYPE>}
- * @throws {TypeError} - The field was invalid.
- * @throws {RangeError} - The value was invalid for the date.
- */
-function DateFieldValue(field, value, calendar) {
-  const fieldName = (typeof field === "string" ? field : field.field);
-  if (calendar.validValue(fieldName, value)) {
-    return {
-      field,
-      value,
-      calendar
-    }
-  } else if (calendar.hasField(field)) {
-    throw RangeError(`Invalid field ${field} value`);
-  } else {
-    throw TypeError("Invlaid field");
-  }
-}
-
-/**
- * @implements {Calendar.Calendar}
- */
-class JulianCalendar {
-
-  /**
-   * @constructor
-   * @describe Creates a day date field.
-   * @param {string} [title] The title of the day field.
-   * @param {number} [value=1] The value of the day.
-   * @param {Function} [validValue] The validator of a value. 
-   * @param {Array<string>} [supportedFields]  The list of supported field names.
-   *  Defaults to the list containing "Day".
-   * @returns 
-   */
-  static Day(field, lastDay, title, supportedFields = ["Day"]) {
-    return {
-      field: field,
-      title: title,
-      validValue(value) {
-        return Number.isInteger(value) && value >= 1 && value <= lastDay;
-      },
-      supportedFields: [...supportedFields],
-      hasField(field) {
-        return this.supportedFields.find((tested) => (tested === field)) != null;
-      },
-      hasDerivedField(field) {
-        return field !== field;
-      },
-      validFieldValue(field, value) {
-        const seekedField = this.getField(field);
-        return seekedField?.validValue(value);
-      },
-      getField(field) {
-        if (this.hasField(field) && this.hasDerivedField(field)) {
-          return this;
-        } else {
-          return undefined;
-        }
-      },
-      withValue(value) {
-        return this.validValue(value) ? new DateFieldValue(this.field, value, this.calendar) : undefined;
-      }
-    }
-  }
-
-  /**
-   * The class month constuructor.
-   * @param {*} title 
-   * @param {*} value 
-   * @param {*} lastDay 
-   * @param {*} validValue 
-   * @returns {Month}
-   */
-  static Month(title, value, lastDay, validValue) {
-    return {
-      field: "Month",
-      title: title,
-      value: value,
-      supportedFields: ["Month", "MonthOfYear", "Day", "DayOfMonth"],
-      derivedFields: ["Day", "DayOfMonth"],
-      hasField(field) {
-        if (this.supportedFields.find((supported) => (supported === field))) {
-          return (Number.isInteger(value) && value >= 1 && value <= lastDay);
-        } else {
-          return false;
-        }
-      },
-      validFieldValue(field, value) {
-        return (this.hasField(field) && this.getField(field).validValue(value));
-      },
-      getField(field) {
-        if (typeof field === "string") {
-          switch (field) {
-            case "Month": case "MonthOfYear":
-              return this;
-            case "Day": case "DayOfMonth":
-              return new this.Day(field, lastDay, undefined, ["Day", "DayOfMonth"]);
-            default:
-              return false;
-          }
-        } else {
-          return false;
-        }
-      },
-      validValue,
-      calendar: "JulianCalendar",
-      toString() {
-        return this.title;
-      },
-      valueOf() {
-        return this.value;
-      }
-    }
-  }
-
-  /**
-   * THe mapping from year types to years.
-   * @type {Map<string, CalendarField>}
-   */
-  static yearTypes = new Map([["leapYear", {
-    field: "Year",
-    value: "leapYear",
-    months: [
-      ["January", 31], ["Feburary", 29], ["March", 31],
-      ["April", 30], ["May", 31], ["June", 30],
-      ["July", 31], ["August", 31], ["September", 30],
-      ["October", 31], ["Novenber", 30], ["December", 31]
-    ].map(([title, lastDay], index) => (new this.Month(title, index + 1, lastDay))),
-
-  }], ["standardYear", {
-    field: "Year",
-    value: "standardYear",
-    months: [
-      ["January", 31], ["Feburary", 28], ["March", 31],
-      ["April", 30], ["May", 31], ["June", 30],
-      ["July", 31], ["August", 31], ["September", 30],
-      ["October", 31], ["Novenber", 30], ["December", 31]
-    ].map(([title, lastDay], index) => (new this.Month(title, index + 1, lastDay))),
-    supportedFields: new Map([["Months", (value) => {
-      switch (typeof value) {
-        case "string":
-          // The name of the month.
-          return this.months.find((month) => (month.title === value));
-        case "number":
-          // Tne number of months.
-          if (value >= 1 && value <= 12) {
-            return this.months[value - 1];
-          }
-        // eslint-disable-next-line no-fallthrough
-        default:
-          return undefined;
-      }
-    }], ["Year"], ["CanonicalYear"]]),
-    withValue(value) {
-      return new DateFieldValue(this.field, value, this.calendar);
-    },
-    /**
-     * Get a derived field. 
-     * @param {number} value - The value of year.
-     * @param {string} field - The field string.
-     */
-    getField(field) {
-      if (this.supportedFields.find((fieldName) => (field === fieldName))) {
-        return this.calendar.getField(field);
-      }
-    },
-    getFieldValue(field, value) {
-      const calendarField = this.getField(field);
-      return calendarField?.withValue(value);
-    }
-  }]
-  ]);
-
-  /**
-   * Get the era abbreviation from era title.
-   * @param {string} title The title of the era.
-   * @returns {string} The abbreviation generated from the title.
-   */
-  getEraAbbreviation(title) {
-    return title.split(" ").filter((part) => (part.length > 0 && /^\p{Lu}/u.test(part))).map().join("");
-  }
-
-
-  /**
-   * Create a field value of an era. The field "Year" is interpreted as a year of era, if it is
-   * valid year of era for the era, or a canonical year, if it is not valid year of era.
-   * @param {string} title the name of the era.
-   * @param {string} [value] The value of the era. This is used to determine
-   * equivalence of the eras. Defaults to the title.
-   * @param {string} [abbrev] The abbreviatiation of the era. If not specified, the abbreviation
-   * is generated from the title with {@link getEraAbbreviation}
-   * @param {Predicate<number>} [validCanonicalYear] The validator of a canonical year. 
-   * @param {{value: number}=>{number}} [toCanonicalYear] The function converting the
-   * year of era into canonical year. The default does no conversion.
-   * @param {Array<string>} [equivalentValues] The list of the values equivalent to this value.
-   * @param {number} [maxYear] The largest allowed year of hte era.
-   * @returns {FieldValue<Era>} - The field value of the era.
-   */
-  createEra(title, value = null, abbrev = null,
-    validCanonicalYear = (year) => (Number.isInteger(year)),
-    toCanonicalYear = (value) => (value), equivalentValues = [], maxYear = null) {
-
-    try {
-      if (typeof ("" + title) !== "string") {
-        throw TypeError("Invalid title: The title has to be Stringifiable.")
-      }
-
-    } catch (error) {
-      throw TypeError("Invalid title: The title has to be Stringifiable.")
-    }
-    try {
-      if (value != null && typeof ("" + value) !== "string") {
-        throw TypeError("Invalid value: The a defined value has to be Stringifiable.")
-      }
-
-    } catch (error) {
-      throw TypeError("Invalid value: The a defined value has to be Stringifiable.")
-    }
-
-    if (!(validCanonicalYear instanceof Function)) {
-      throw TypeError(`Invalid validCanonicalYear: The canonical year validatorn has to be a function`);
-    }
-
-    if (!(toCanonicalYear instanceof Function)) {
-      throw TypeError(`Invalid toCanonicalYear: The converter to the canonical year has to be a function`);
-    }
-    if (!(equivalentValues instanceof Array)) {
-      throw TypeError(`Invalid equivalent values has to be an array`);
-    }
-
-    const canonicalYearField = this.getField("CanonicalYear");
-    const calendar = this;
-    const createdEra = {
-      field: "Era",
-      title,
-      fields: ["YearOfEra", "Year", "CanonicalYear"],
-      equivalentTo: equivalentValues,
-      value: value == null ? title : value,
-      abbrev: abbrev == null ? this.getEraAbbreviation(title) : abbrev,
-      getField(field, value = null) {
-        const fieldName = (typeof field === "string" ? field : field.field);
-        if (value == null) {
-          if (fieldName === "Year" || fieldName === "YearOfEra") {
-            return this.getField(field)
-          } else if (fieldName === "CanonicalYear") {
-            return canonicalYearField;
-          }
-        } else if (Number.isInteger(value)) {
-          if (fieldName === "YearOfEra" || (fieldName === "Year")) {
-            // The value is valid year within era.
-            const maximum = this.getFieldMaximum(fieldName);
-            if (value >= 1 && (maximum == null || value < maximum)) {
-              // TODO: replace with generation of the proper year or the year of era. 
-              return {
-                field: fieldName + ":value",
-                era: createdEra,
-                value,
-                calendar,
-                getField(field, value = null) {
-                  if (field === this.field) {
-                    return this.value;
-                  } else if (["YearOfEra", "Year"].find(
-                    (yearField) => (yearField === field || yearField === `${yearField}:value`)) != null) {
-                    // The year is year of era or value of year of era.
-                    const resultYear = (value ? toCanonicalYear(value) : this.toCanonicalYear(this.value));
-                    const [yearFieldName, fieldDescriptor] = field.split(":");
-                    const resultField = (this.isLeapYear(resultYear) ? this.calendar.getField(`${yearFieldName}:leapYear`) :
-                      this.calendar.getField(`${yearFieldName}:standardYear`));
-                    if (fieldDescriptor === ":value") {
-                      if (value) {
-                        return resultField.getField(field, value);
-                      } else {
-                        return undefined;
-                      }
-                    } else if (value) {
-                      return resultField.getField(field, value);
-                    } else {
-                      return resultField;
-                    }
-                  } else if (["CanonicalYear"].find(
-                    (yearField) => (yearField === field || yearField === `${yearField}:value`)) != null) {
-                    // THe canonical year.
-                    const resultYear = (value ? value : this.toCanonicalYear(this.value));
-                    const [yearFieldName, fieldDescriptor] = field.split(":");
-                    const resultField = (this.isLeapYear(resultYear) ? this.calendar.getField(`${yearFieldName}:leapYear`) :
-                      this.calendar.getField(`${yearFieldName}:standardYear`));
-                    if (fieldDescriptor === ":value") {
-                      if (value) {
-                        return resultField.getField(field, value);
-                      } else {
-                        return undefined;
-                      }
-                    } else if (value) {
-                      return resultField.getField(field, resultYear);
-                    } else {
-                      return resultField;
-                    }
-                  }
-
-                  return undefined;
-                }
-              };
-            }
-          } else if (fieldName === "CanonicalYear") {
-            // Returning the canonical year.
-            const result = toCanonicalYear(value);
-            if (validCanonicalYear(result)) {
-              // TODO: replace with generation of the proper canonical year. 
-              return {
-                field: fieldName, value: result,
-                getField(field, value = null) {
-                  if (field === "Year" || field === "CanonicalYear") {
-                    if (field === this.field) {
-                      return this.value;
-                    } else if (["CanonicalYear", "Year"].find(
-                      (yearField) => (yearField === field || yearField === `${yearField}:value`)) != null) {
-                      // THe canonical year.
-                      const resultYear = (value ? value : this.value);
-                      const [yearFieldName, fieldDescriptor] = field.split(":");
-                      const resultField = (this.isLeapYear(resultYear) ? this.calendar.getField(`${yearFieldName}:leapYear`) :
-                        this.calendar.getField(`${yearFieldName}:standardYear`));
-                      if (fieldDescriptor === ":value") {
-                        if (value) {
-                          return resultField.getField(field, value);
-                        } else {
-                          return undefined;
-                        }
-                      } else if (value) {
-                        return resultField.getField(field, resultYear);
-                      } else {
-                        return resultField;
-                      }
-                    }
-
-                    return undefined;
-                  }
-                }
-              };
-            }
-          }
-        }
-        // The value was invalid.
-        return undefined;
-      },
-      /**
-       * Get the field value.
-       * @param {string} field - The field name. 
-       * @returns {(string|number|undefined)} The value of the given field, or an undefined value, if
-       * the field is not supported, or does not have a value.
-       */
-      getFieldValue(field) {
-        if (field === this.field) {
-          return this.value;
-        }
-        const fieldValue = this.getField(field);
-        if (fieldValue != null) {
-          return fieldValue.value;
-        } else {
-          return undefined;
-        }
-      },
-      getFieldMinimumField(field) {
-        if (field === this.field) {
-          return undefined; // String valued field does not have minimum.
-        }
-        if (["Year", "YearOfEra"].find((v) => (v === field))) {
-          // The default minimum is 1.
-          return 1;
-        } else if (field === "CanonicalYear") {
-          // The canonical year does not have a minimum.
-          // (Optionally add boundary of the dates)
-          return null;
-        }
-      },
-      getFieldMaximumField(field) {
-        if (field === this.field) {
-          return undefined; // String valued field does not have minimum.
-        }
-        if (["Year", "YearOfEra"].find((v) => (v === field))) {
-          // The default minimum is 1.
-          return maxYear;
-        }
-      },
-      toString() {
-        return this.title;
-      }
-    };
-    return createdEra;
-  }
-
-  /**
-   * Create a new Julian Calendar.
-   * @param {{day: number=1, month: number=1}} startOfYear The start of the year.
-   */
-  constructor(startOfYear = { day: 1, month: 1 }) {
-    this.startOfYear = startOfYear;
-    this.eras = new Map([
-      ["Before the Common Era", this.createEra("Before the Common Era", "BCE", null, (year) => (year <= 0),
-        (year) => (1 - year), ["Before Christ"])],
-      ["Common Era", this.createEra("Before Christ", "CE", null, (year) => (year > 0),
-        (year) => (year), ["Anno Domini"])],
-      ["Before Christ", this.createEra("Before Christ", "BC", null, (year) => (year <= 0),
-        (year) => (1 - year), ["Before the Common Era"])],
-      ["Anno Domini", this.createEra("Before Christ", "AD", null, (year) => (year > 0),
-        (year) => (year), ["Common Era"])],
-    ]);
-    this.years = this.constructor.yearTypes;
-  }
-
-  /**
-   * Is the canonical year a leap year.
-   * @param {number} year - The tested canonical year.
-   * @returns {boolean} True, if and only if the year is a canonical year.
-   */
-  isLeapYear(year) {
-    switch (typeof year) {
-      case "number":
-        return ((year + (this.startOfYear.month > 2 ? -1 : 0)) % 4 == 1);
-      case "object":
-        if ("getFieldValue" in year && "validField" in year) {
-          // The object is a value of field.
-          if (year.validField("CanonicalYear")) {
-            return this.isLeapYear(year.getFieldValue("CanonicalYear"));
-          }
-        } else if ("field" in year && "value" in year) {
-          // The object is a field value.
-          if (this.validField(year.field, year.value)) {
-            return this.isLeapYear(this.getField(year.field).getField("CanonicalYear"));
-          }
-        } else if ("year" in year) {
-          if ("era" in year) {
-            // A year of era. 
-            if (this.hasEra(year.era)) {
-              // The calendar recognizes the era.
-              return this.isLeapYear(this.getEra(year.era).getFieldValue("CanonicalYear"));
-            }
-          } else {
-            // A canonical year. 
-            return this.isLeapYear(year.year);
-          }
-        }
-      // eslint-disable-next-line no-fallthrough
-      default:
-        throw TypeError("Invalid year");
-    }
-  }
-
-  /**
-   * Does the calendar have given field.
-   * @param {string} field The tested field name.
-   * @returns {boolean} True, if and only if the calendar recognizes the given field.
-   */
-  hasField(field) {
-    return this.supportedFields.has(field);
-  }
-
-  /**
-   * Get a field of the calendar.
-   * @param {*} field The filed.
-   * @returns {CalendarField?} The calendar field with given field 
-   */
-  getField(field) {
-    // The Calendar supports lots of fields. 
-    if (field === "Year:leapYear") {
-      return this.years.get("leapYear");
-    } else if (field === "Year:standardYear") {
-      return this.years.get("standardYear")
-    } else if (this.eras.has(field)) {
-      return this.eras.get(field);
-    } else {
-      return undefined;
-    }
-  }
-
-  /**
-   * Get field value.
-   * @param {CalendarField|string} field The field, whose value for Calendar is queried.
-   * @returns {string|number|undefined} The value of the field, or an undefined value, if
-   * field does nto exist.
-   */
-  getFieldValue(field, value) {
-    const resultField = this.getField(field);
-    return resultField.withValue(value);
-
-  }
-
-
-  hasEra(era) {
-    switch (typeof era) {
-      case "number":
-        if (era < 1) return false;
-        return (era <= this.eras.length && this.eras.get(era - 1) != null);
-      case "string":
-        return this.eras.has(era);
-      case "object":
-        if (["getField", "getFieldValue", "hasField"].every((prop) => (prop in era && era[prop] instanceof Function))) {
-          // A field value.
-          if (era.field === "Era") {
-            return this.hasEra(era.value);
-          }
-        } else if (["field", "value"].every((prop) => (prop in era))) {
-          if (era.feild === "Era") {
-            return this.hasEra(era.value);
-          }
-        }
-      // eslint-disable-next-line no-fallthrough
-      default:
-        return false;
-    }
-  }
-
-  getEra(era) {
-    if (this.hasEra(era)) {
-      switch (typeof era) {
-        case "number":
-          // Era is a number.
-          return this.eras.values()[era - 1];
-        case "string":
-          return this.eras.get(era);
-        case "object":
-          if (["getField", "getFieldValue", "hasField"].every((prop) => (prop in era && era[prop] instanceof Function))) {
-            // A field value.
-            if (era.field === "Era") {
-              return this.getEra(era.value);
-            }
-          } else if (["field", "value"].every((prop) => (prop in era))) {
-            if (era.feild === "Era") {
-              return this.getEra(era.value);
-            }
-          }
-        // eslint-disable-next-line no-fallthrough
-        default:
-          return undefined;
-      }
-    } else {
-      return undefined;
-    }
-  }
-}
-
-const JuliaCaleandarInstance = new JulianCalendar();
-
-/**
- * @template {Calendar.Calendar} CALENDAR - The calendar of the field.
- * @typedef {Object} YearOfEra
- * @implements {Calendar.Year<CALENDAR>}
- * @property {string} field @inheritdoc
- * @property {number} year @inheirtdoc
- * @property {string} era @inheritdoc
- * @property {Calendar} calendar @inheritdoc
- */
-class YearOfEra {
-
-  /**
-   * Create a new year of era.
-   * 
-   * @param {YearOfEra<CALENDAR>} param0
-   * @param {number} year The year of the era.
-   * @param {number|string} era The era number, era name, or era abbreviation.
-   * @param {Calendar} calendar The calendar of the date.
-   * @throws {TypeError} The calendar, the era, or the year was invalid.
-   */
-  constructor({ year, era, calendar }) {
-    if (calendar == null || !(calendar instanceof Object)) {
-      throw new TypeError("Invalid calendar type");
-    }
-    if (!calendar.validField("Era", era)) {
-      throw new TypeError("Invalid calendar era");
-    }
-    if (!calendar.getField("Era", era).validField("Year", year)) {
-      throw new TypeError("Invalid calendar year of era");
-    }
-    this.calendar = calendar;
-    this.era = era;
-    this.year = year;
-  }
-
-
-}
-/**
- * @template {Calendar} CALENDAR - The calendar of the field.
- * @typedef {Object} YearOfEra
- * @implements {Year<CALENDAR>}
- * @property {string} field @inheritdoc
- * @property {string} era @inheritdoc
- * @property {Calendar} calendar @inheritdoc
- */
-
-
-/** 
- * @interface Month
- * @extends CalendarFieldValue
- * @description Either month or a month of year.
- * @property {number} value The month starting from index 1.
- * @property {Year} [year] The year of the month. 
- * @property {string|Calendar} [calendar] The calendar of the month.
- */
-/** 
- * @interface Day
- * @extends CalendarFieldValue
- * @descripotion Either a day, a day of month, or a day of year.
- * @property {string} field The calendar field. Either "Day", "DayOfMonth", or "DayOfYear"
- * @property {number} value The day startng from index 1.
- * @property {Month} [month] The month of the date, if day of month.
- * @property {Year} [year] The year of the date, if day of year.
- * @property {string|Calendar} [calendar] The calendar of the day. 
- */
-/** 
- * @interface Era
- * @extends CalendarFieldValue
- * @description An era. 
- * @property {string} field The calendar field. Either "Era" or "EraOfCycle"
- * @property {string} [name] The name of the era.
- * @property {Function} formatYearOfEra The format of the year with era.
- * @property {Function} parseYearOfEra The parser of a formatted year.
- * @property {number} value The number of the era.
- * @property {string|Calendar} [calendar] The calendar of the era. 
- */
-/** 
- * @interface EraCycle
- * @extends CalendarFieldValue
- * @description A cycle of an era.
- * @property {string} field The calendar field. Either "CalendarCycle"
- * @property {number} cycle Teh cycle of the era.
- * @property {string|Calendar} [calendar] The calendar of the cycle.
- */
-/** 
- * @interface HermeticSeason
- * @extends CalendarFieldValue
- * @property {number|string} season The seaons of the season.
- * @property {number|string|Year} year The year of the season. This may
- * be Julian or Hermetic year. The default is Julian Calendar year.
- */
-/** 
- * @interface JulianDate
- * @extends CalendarFieldValue
- * @property {number} day The julian calendar day of month.
- * @property {number|string|Month} month The julian calendar month of year.
- * @property {number|string|Year} year The julian calendar year starting from
- * start of March.
- * @property {Calendar} calendar The julian calendar. 
- */
-/** 
- * @interface AriesianData
- * @extends {CalendarFieldValue}
- * @property {number} day  The day of month.
- * @property {number|string|Month} month The month of year.
- * @property {string|HermeticSeason} [season] The season of the date.
- * @property {number|string|Year} year The year. 
- * @property {Calendar} calendar The hermetic calendar. 
- */
-
-/**
- * @typedef {Object} SimpleCalendarDate
- * @description A simple calendar date using a day of month, a month of year, and
- * a year of era or a canonical year as numbers.
- * @property {number} day the day of month. First month has index 1.
- * @property {number} month The month of year. First month has index 1.
- * @property {number} year The year of era or the canonical year, if no era is given.
- * @property {number|string} [era] The era of the year. 
- */
-/**
- * @typedef {Object} CalendarFieldDate
- * @description A calendar date using fields of calendar.
- * @property {DayOfMonth|DayOfYear} day the day 
- */
-
-/** 
- * @typedef {HermeticSeason|JulianDate|AriesianDate} HermeticDate
+ * @typedef {string} HermeticDate
  */
 
 /**
  * 
  * @param {string} name The name of the created saga.
- * @param {string|CalendarDate|HermeticDate} startDate The start date of the created saga.
+ * @param {HermeticDate} [startDate] The start date of the created saga. Defaults
+ * to the start of year 1220AD.
  */
-export function createSaga(name, startDate) {
+export function createSaga(name, startDate = "Spring 1220AD") {
   const saga = {
     title: name,
     start: startDate,
@@ -1363,28 +615,53 @@ export function createSaga(name, startDate) {
       }]
     }
   }
+
+  return saga;
 }
 
 
-
+/**
+ * Get the base path of the library database.
+ * @returns {string} The database base path. 
+ */
 function getBasePath() {
   return "arm5/";
 }
 
+/**
+ * Get database path.
+ * @typedef {Object} DBPathOptions
+ * @property {string} [saga] The saga identifier of the library path.
+ * @property {string} [collection] The collection of the libraryidentifier. Takes precedence over
+ * the collections.
+ * @property {string[]} [collections] The collections list of the collections. 
+ * @property {string} [book] The book identifier of the book.
+ * @property {string} [content] The content identifier.
+ */
+
+/**
+ * Get the database path of with the given options.
+ * @param {DBPathOptions} options 
+ * @returns The firebase reference to the path.
+ */
 function getDbPath(options) {
   let result = getBasePath();
   if (options.saga) {
-    result = result.concat(`saga/${options.saga}/`);
+    result = getChild(result, `saga/${options.saga}/`);
   }
-  result += "library/";
+  result = getChild(result, "library/");
   if (options.collection) {
-    result = result.concat("collections/" + options.collection);
+    result = getChild(result, "collection/" + options.collection);
   }
   if (options.collections) {
-    result = result.concat(options.collections.map((c) => (`collection/${c}`)).join("/"), "/")
+    result = getChild(result, options.collections.map((c) => (`collection/${c}`)).join("/") + "/");
   }
   if (options.book) {
-    result = result.concat("book/" + options.book, "/");
+    result = getChild(result, `book/${options.kook}`);
+  }
+
+  if (options.content) {
+    result = getChild(result, `content/${options.content}`);
   }
 
   return result;
@@ -1398,21 +675,25 @@ function getDbPath(options) {
  */
 export function createBook(book, options = {}) {
   const stored = new BookModel(book);
-  const booksPath = getDbPath({
-    saga: options.saga
-  });
-  const dbPath = getDbPath(options);
-  const storedKey = pushRecord(getRef(database, booksPath), stored.toJSON());
+  const dbPath = getChild(getDbPath({ saga: options.saga }), "book");
+  const storedKey = pushRecord(dbPath, stored.toJSON());
+
+  // Add book to the collection
   const updates = {};
   if (options.collection) {
-    const ref = getRef(database,
-      {
-        saga: options.saga,
-        collection: options.collection,
-        collections: options.collections
-      });
-    updates[ref] = insert(storedKey);
+    const collectionPath = getChild(getDbPath({ saga: options.saga, collection: options.collection, collections: options.collections }), "books");
+
+    runTransaction(collectionPath, (collection) => {
+      if (collection) {
+        collection.push(storedKey);
+      }
+      return collection;
+    });
+    updates[collectionPath] = (storedKey);
   }
+  // Adding contents.
+  // TODO: Test which contents does not yet belong to the contents of the library.
+
   return {
     id: storedKey,
     value: stored
