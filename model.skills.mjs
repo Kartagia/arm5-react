@@ -22,6 +22,34 @@
  * @property {string} [description] The description of the skill.
  */
 
+/**
+ * Create a new skill.
+ * @param {string} skillName The name of the skill.
+ * @param {string} [title] The title of the skill. Defaults to the name. 
+ * @param {string} [abbreviation] The abbreviation of the skill.
+ * @param {string} [description] The description of the skill. 
+ * @param {SkillGroupModel} [group] The group of the skill.
+ * @returns {SkillModel} The skill model. 
+ */
+export function createSkill(skillName, title=undefined, abbreviation=undefined, description=undefined, group=undefined) {
+  if (!validSkillName(skillName)) {
+    throw new TypeError("Invalid skill name");
+  }
+  if (title && !validSkillName(title)) {
+    throw new TypeError("Invalid skill title");
+  }
+  if (abbreviation && !validAbbreviation(abbreviation)) {
+    throw new TypeError("Invalid abbreviation");
+  }
+  return {
+    name: skillName,
+    title,
+    group,
+    abbreviation,
+    description
+  };
+}
+
 
 /**
  * @typedef {Object} SkillGroupModel
@@ -127,6 +155,69 @@ export const validAbbreviation = (abbreviation) => {
   );
 };
 
+
+/**
+ * A skill representing a skill group member.
+ * @extends {SkillModel}
+ */
+export class SkillGroupMember {
+
+  /**
+   * The group the member belongs to.
+   */
+  #group;
+
+  /**
+   * The member of the group.
+   */
+  #member;
+
+  /**
+   * Create a new skill group model.
+   * @param {SkillGroupModel} group The group model.
+   * @param {SkillModel} member The member model.
+   */
+  constructor(group, member) {
+    this.#group = group;
+    this.#member = member;
+  }
+
+  /**
+   * The name of the member.
+   */
+  get name() {
+    return this.#group.composeMemberName(this.#member);
+  }
+
+  /**
+   * The title of the member.
+   */
+  get title() {
+    return this.name();
+  }
+
+  /**
+   * The abbreviation of the group.
+   */
+  get abbreviation() {
+    return this.#group.abbreviatedMemberName(this.#member);
+  }
+
+  /**
+   * The description of the group member.
+   */
+  get description() {
+    return this.#member.description;
+  }
+
+  /**
+   * The group of the group member.
+   */
+  get group() {
+    return this.#group;
+  }
+}
+
 /**
  * Create a skill group.
  * @param {string} groupName The group name.
@@ -181,11 +272,15 @@ export const createSkillGroup = (
             )
           );
         },
-    abbreviatedMemberName: abbreviatedMemberName
+      abbreviatedMemberName: abbreviatedMemberName
       ? abbreviatedMemberName
       : /** @type {ToStringer<SkillModel>} */ (skill) => {
-          return `${this.abbreviation}: ${skill.title}`;
+          return `${this.abbreviation}: ${skill.abbreviation || skill.title}`;
         },
+    createMember(memberName, title=undefined, abbreviation=undefined, description=undefined) {
+      const member = createSkill(memberName, title, abbreviation, description, this);
+      return new SkillGroupMember(this, member);
+    },
   };
 };
 
