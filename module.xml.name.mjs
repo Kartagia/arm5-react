@@ -4,7 +4,7 @@
  * The module defining the XML Qualified names.
  */
 
-import { authorityRegex, hostNameRegex } from "./modules.uri.mjs";
+import { authorityRegex, regNameRegex } from "./modules.uri.mjs";
 
 /**
  * The regular expresion matching to a scheme.
@@ -56,7 +56,7 @@ export function getUriSegmentValueRegex(segmentName) {
     case "fragment":
       return new RegExp("^" + fragmentRegex.source + "$", "u");
     case "hostName":
-      return new RegExp("^" + hostNameRegex.source + "$", "u");
+      return new RegExp("^" + regNameRegex.source + "$", "u");
     case "userInfo":
       return new RegExp("^" + userInfoRegex.source + "$", "u");
     default:
