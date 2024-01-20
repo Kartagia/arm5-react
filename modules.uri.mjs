@@ -4,15 +4,13 @@
  * classes URI, and URN to complement with JavaScript URL.
  */
 
-import { userInfoRegex } from "./module.xml.name.mjs";
-
 /**
  * Escape the value.
  * @param {string} value The literal string sequence.
  * @return {string} The regular expression source literally matching to the value.
  */
 export function regexEscape(value) {
-  const regex = /[^$(){}[\]\\/.\-+*?]/g;
+  const regex = /[\^$(){}[\]\\/.\-+*?]/g;
   return value.replaceAll(regex, "\\$&");
 }
 
@@ -26,8 +24,8 @@ export function regexCharacterGroupEscape(value, unicodeGroups = false) {
   const symbols = value.split({
     [Symbol.split](str) {
       const regex = unicodeGroups
-        ? /\\(?<escapeTarget>.|[p]\{(?<group>\w+)\})/gi
-        : /\\(?<escapeTarget>.)/gi;
+        ? /(?<escapeTarget>\\(?:.|[p]\{(?<group>[a-z_-]+)\}))/gi
+        : /(?<escapeTarget>\\.)/gi;
       let match,
         start = 0;
       const result = [];
@@ -77,14 +75,20 @@ const reserved = [...genericDelimiters, ...subDelimiters];
 /**
  * The list of the unreserved regular expression sequences.
  */
-const unreserved = ["\\w", "\\.", "_", "\\-"];
+const unreserved = ["\\w", ".", "_", "-"];
 
 /**
  * The regular expression matching an unserved character.
  */
 // eslint-disable-next-line no-unused-vars
-const unreservedRegexp = new RegExp("[" + unreserved.join("") + "]");
+const unreservedRegexp = new RegExp(
+  "[" + unreserved.map(regexCharacterGroupEscape).join("") + "]"
+);
 
+/**
+ * The regular expression matchign to a single character of a URI. The character may be a character
+ * or a percent escape.
+ */
 const pCharRegex = /(?:[!$&'()*+,;=:@\w._~-]|%[0-9a-fA-F]{2})/;
 
 /**
@@ -327,17 +331,6 @@ export class Path {
    */
   toString() {
     return this.#segments.join(this.#delimiter);
-  }
-}
-
-export class URN extends URI {
-  /**
-   *
-   * @param {string} schema The schema of the URN.
-   * @param {string|string[]|Path} path The path of the URN.
-   */
-  constructor(schema, path) {
-    super({ schema, path, type: "URN" });
   }
 }
 
@@ -686,10 +679,35 @@ export class URI {
     }
   }
 }
+
+/**
+ *
+ */
+export class URN extends URI {
+  /**
+   *
+   * @param {string} schema The schema of the URN.
+   * @param {string|string[]|Path} path The path of the URN.
+   */
+  constructor(schema, path) {
+    super({ schema, path, type: "URN" });
+  }
+}
+
+/**
+ * The regular expression matching to a single IPv4 address segment.
+ */
 const ip4WordRegex = new RegExp("(?:25[0-5]|2[0-4]\\d|1?\\d{2}|\\d{1,2})");
+/**
+ * The regular expression matching to a single IPv6 hex segment.
+ */
 const ip6WordRegex = new RegExp("(?:0|[1-9a-fA-F][\\da-fA-F]{0,3})");
+
+/**
+ * The regular expression matching to a IPv4 address.
+ */
 const ip4hostRegex = new RegExp(
-  "(?:" + ip4WordRegex.source + "(?:\\." + ip4WordRegex.source + "{3})",
+  "(?:" + ip4WordRegex.source + "(?:\\." + ip4WordRegex.source + "{3}))",
   "u"
 );
 /**
@@ -742,13 +760,15 @@ const ip6full =
   ip6WordRegex.source +
   "(?::" +
   ip6WordRegex.source +
-  "){5})" +
-  ip6fullLast32bitSource;
+  "){5}" +
+  ":" +
+  ip6fullLast32bitSource +
+  ")";
 /**
  * The regular expression source matching to a short hand IPv6 address starting
  * with a gap.
  */
-const ip6shortHandPrefix = "(?::" + "(?::" + ip6WordRegex.source + "){0,7}";
+const ip6shortHandPrefix = "(?::" + "(?::" + ip6WordRegex.source + "){0,7})";
 "|" +
   "(?::" +
   ip6WordRegex.source +
@@ -824,7 +844,7 @@ function createIpv6ShorthandAddressRegexp(
  */
 const ip6shortHandMid =
   "(?:" +
-  ip6WordRegex.source + 
+  ip6WordRegex.source +
   "(?:" +
   range(1, 6)
     .map((suffixCount) => createIpv6ShorthandAddressRegexp(suffixCount).source)
@@ -838,20 +858,93 @@ const ip6hostRegex = new RegExp(
       "|"
     ) +
     ")" +
-    "\\])",
-  "u"
+    "\\])"
 );
-export const hostNameRegex = new RegExp("", "u");
+
+/**
+ * The regular expression matching to a DNS host name.
+ * The checking does not
+ */
+export const dnsNameRegex = new RegExp(
+  "(?:" +
+    "(?:" +
+    "(?:(?:[\\da-zA-Z-]|%[da-fA-F])+)" +
+    "(?:\\.(?:[\\da-zA-Z-]|%[\\da-fA-F]{2})+)*" +
+    ")?" +
+    "(?:[\\da-zA-Z]|%[\\da-fA-F]{2})" +
+    ")"
+);
+/**
+ * The regular expression matching to a URI host name.
+ * @type {RegExp}
+ */
+export const regNameRegex = new RegExp(
+  "(?:" +
+    "(?:[" +
+    [...unreserved, ...subDelimiters].map(regexCharacterGroupEscape).join("") +
+    "]+" +
+    "|" +
+    PercentEncodingRegex.source +
+    ")*" +
+    ")"
+);
+
+/**
+ * The regular expression matching to a valid host name segment of the URI.
+ * @type {RegExp}
+ */
 const hostRegex = new RegExp(
   "(?<hostName>" +
     ip4hostRegex.source +
     "|" +
     ip6hostRegex.source +
     "|" +
-    hostNameRegex.source +
+    regNameRegex.source +
     ")(:(?<port>\\d+))?",
   "u"
 );
+
+/**
+ * The Regex source of a single user name character.
+ */
+const userNameCharacterSource =
+  "(?:[" +
+  [...unreserved, ...subDelimiters].map(regexCharacterGroupEscape).join("") +
+  +"]|" +
+  PercentEncodingRegex.source +
+  ")";
+
+/**
+ * The Regex source of a single information character. This is also the valid password
+ * character.
+ */
+const userInfoCharacterSource =
+  "(?:[" +
+  [...unreserved, ...subDelimiters, ":"]
+    .map(regexCharacterGroupEscape)
+    .join("") +
+  +"]" +
+  "|" +
+  PercentEncodingRegex.source +
+  ")";
+
+/**
+ * The regular expression matching to the user information segment of the URI.
+ */
+const userInfoRegex = new RegExp(
+  "(?:" +
+    "(?<userName>" +
+    userNameCharacterSource +
+    "*)" +
+    "(?::(?<password>" +
+    userInfoCharacterSource +
+    "*))?" +
+    "@)"
+);
+
+/**
+ * The regular expression matching to the authority segment of the URI.
+ */
 export const authorityRegex = new RegExp(
   "(?<authority>" +
     "\\/\\/" +
@@ -861,6 +954,22 @@ export const authorityRegex = new RegExp(
     ")",
   "u"
 );
+
+/**
+ * Get the regular expression maching a valid IPv6 address.
+ * @returns {RegExp} A new regular expressoin matching to a IPv6 address.
+ */
+export function getIPv6AddressRegEx() {
+  return allMatchingRegex(ip6hostRegex);
+}
+
+/**
+ * Get the regular expression maching a valid IPv4 address.
+ * @returns {RegExp} A new regular expressoin matching to a IPv4 address.
+ */
+export function getIv4AddressRegEx() {
+  return allMatchingRegex(ip4hostRegex);
+}
 
 /**
  * Get a regular expression which only contains given regular expression content.
