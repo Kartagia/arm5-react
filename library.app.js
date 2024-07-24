@@ -1,8 +1,9 @@
 import React from 'react';
 import { useState, useEffect, useId, Fragment } from 'react';
 import ReactDOM from 'react-dom';
-import { isPojo, ucFirst } from '././module.utils.js'
+import { isPojo, ucFirst } from './module.utils.js'
 import {createActionHandler} from "./module.action.js";
+import {getLibrary} from "./library-data.js";
 
 // Start-include Modal.jsx
 // Replaced import {addListener, removeListener, fireCustomUIEvent} from 'eventListeners.js'
@@ -729,62 +730,7 @@ export function Library(props) {
 
 export function Main(props) {
   const [opened, setOpen] = useState(false);
-  const [library, setLibrary] = useState({
-    collections: [],
-    books: [
-      {
-        id: "ability.hermetic.summa.Principia_Magica",
-        title: "Principia Magica",
-        author: "Bonisagus",
-        contents: [
-          {
-            id: "principia_magica.magic_theory",
-            type: "Summa",
-            targetType: "Hermetic Ability",
-            target: "Magic Theory",
-            level: 5,
-            quality: 15
-        }
-        ]
-        },
-      {
-        title: "Summae Vitae",
-        type: "Summa",
-        targetType: "Art",
-        contents: [
-          {
-            target: "Vim",
-            level: 4,
-            quality: 10
-          },
-          { target: "Corpus", level: 4, quality: 9 },
-          { target: "Creo", level: 4, quality: 9 }
-            ]
-        },
-
-      {
-        title: "Flaws of the Founders",
-        author: "Flavicus ex Tytalus",
-        contents: [
-          {
-            target: "Order of Hermes Lore",
-            quality: 7
-            },
-          {
-            targetType: "Art",
-            target: "Vim",
-            quality: 7
-            },
-          {
-            targetType: "Art",
-            target: "Ignem",
-            quality: 8
-            }
-            ]
-        }],
-    pending: [],
-    history: []
-  });
+  const [library, setLibrary] = useState(getLibrary());
   console.log(`Modal open status: ${opened}`)
 
 
