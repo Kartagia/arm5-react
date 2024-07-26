@@ -79,7 +79,7 @@ export const itemLabtext = [
 export const commonFieldDefs = [
   { name: "title", title: "Title", type: "string" },
   { name: "description", title: "Description", type: "string" },
-  { name: "id", title: "Id", type: "string" }
+  { name: "id", title: "Id", type: "hidden", entry="string"}
 ];
 /**
  * The language field definition.
