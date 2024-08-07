@@ -570,20 +570,20 @@ export function Books({ title, books, onChange = null }) {
         event.preventDefault();
         const [title, author] = [
         event.target.title &&event.target.title.value,
-        event.target.author && event.target.author
+        event.target.author && event.target.author.value
         ];
         alert(
         `Adding "${title || "(unkown)"}" by "${author || "(unknown)"}"`
         );
         let added = {title, author};
         setEdited(added);
-        setMode("Add")
+        setMode("Add");
       }
     }>
     <label htmlFor={nameRef}>Title</label>
     <input id={nameRef} type="text" name="title"/>
     <label htmlFor={authorRef}>Author</label>
-    <input id={authorRef} type="text" />
+    <input id={authorRef} name="author" type="text" />
     <input name="addBook" type="submit" value="Add"/>
     </form></footer>
     </section>
