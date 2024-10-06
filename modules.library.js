@@ -79,7 +79,7 @@ export const itemLabtext = [
 export const commonFieldDefs = [
   { name: "title", title: "Title", type: "string" },
   { name: "description", title: "Description", type: "string" },
-  { name: "id", title: "Id", type: "hidden", entry="string"}
+  { name: "id", title: "Id", type: "hidden", entry = "string" }
 ];
 /**
  * The language field definition.
@@ -158,12 +158,22 @@ export const contentFieldDefs = [
  * 
  */
 
-export function getDefaultAlphabet(lang) {
+/**
+ * Get default alphabet.
+ * @param {string} lang The language.
+ * @param {string} [dialect] The dialect of the language.
+ */
+export function getDefaultAlphabet(lang, dialect = null) {
   switch (lang) {
     case 'Arabic':
     case "Latin":
     case "Greek":
       return lang;
+    case "West Slavonic":
+      return "Latin";
+    case "East Slavonic":0
+    case "South Slavonic":
+      return "Glacolitic";
     default:
       return "Latin";
   }

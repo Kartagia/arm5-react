@@ -5,6 +5,23 @@ import { isPojo, ucFirst } from './module.utils.js'
 import {createActionHandler} from "./module.action.js";
 import {getLibrary} from "./library-data.js";
 
+/**
+ * @param {Library} target
+ * @param {Collection} payload
+ */
+export function addToCollections(target, payload) {
+  if (payload.id) {
+    // The payload has id
+  } else if (payload.index != null) {
+    // 
+  }
+}
+
+export function deleteFromCollections(target, payload) {
+  const predicate = (payload.id ? ((old) => (old.id !== payload.id)) : ((old, index) => (index !== payload.index)));
+  return target.filter(predicate);
+}
+
 // Start-include Modal.jsx
 // Replaced import {addListener, removeListener, fireCustomUIEvent} from 'eventListeners.js'
 
@@ -204,6 +221,7 @@ export function TitleBar(props) {
 
 /**
  * Modal component.
+ * 
  * @param {ModalProperties} props Properties.
  */
 export function Modal(props) {
@@ -303,9 +321,6 @@ export function Content(props) {
 }
 
 export function parseContents(contents = [], defaultValues = {}) {
-  console.group(`Parse contents`);
-  console.table([contents, defaultValues])
-  console.groupEnd();
   const result = contents.map(
     (contentDef, index) => {
       return {
@@ -363,7 +378,11 @@ export function Book(props) {
    </article>);
 }
 
-export function EditBook(props) {
+/**
+ * BookEditor component.
+ * @param {} props
+ */
+export function BookEditor(props) {
   const [book, setBook] = useState({ ...(props.book || {}) });
   const [opened, setOpen] = useState((!(props.hidden === true)))
   const [errors, setErrors] = useState({ ...(props.errors || {}) })
@@ -389,12 +408,15 @@ export function EditBook(props) {
   ["title", "author", "target", "targetType"].forEach(
     (field) => {
       fields[field] = {
+        title: ucFirst(field),
         required: false,
         parser: (s) => (s)
       }
-    })["type"].forEach(
+    });
+    ["type"].forEach(
     (field) => {
       fields[field] = {
+        title: ucFirst(field),
         required: false,
         values: ["Art", "Ability"],
         defaultValue: "Ability",
@@ -417,9 +439,11 @@ export function EditBook(props) {
           return parts.join(" ");
         }
       }
-    })["quality", "level"].forEach(
+    });
+    ["quality", "level"].forEach(
     (field) => {
       fields[field] = {
+        title: ucFirst(field),
         required: false,
         type: "number",
         parser: (s) => {
@@ -429,10 +453,49 @@ export function EditBook(props) {
           } else {
             throw new RangeError("Invalid value");
           }
-        }
+        },
+        input: <input type="number"/>
       }
     }
-  )
+  );
+  const parseResult = (event, formData) => {
+    event.preventDefault();
+  }
+  
+  const isBookFields = (type, fieldName) => {
+    const baseFields = ["title", "author", "language", "script"];
+    switch (type) {
+      case "Commentary":
+      case "Summa":
+      case "Tractatus":
+        return isContentFields(type, fieldName);
+      case "Labtext":
+       [...baseFields, "translated" ].includes(fieldName);
+    }
+  }
+  
+  const isContentFields = (type, fieldName) => {
+    const baseFields = ["title", "author", "language", "script", "original"];
+    switch (type) {
+      case "Summa":
+        return [...baseFields, "level", "quality", "targetType", "target"].includes(fieldName);
+      case "Commentary":
+        if (["summa"].includes(fieldName)) return true;
+      case "Tractatus":
+        return [...baseFields, "quality", "targetType", "target"].includes(fieldName);
+      case "Casting Tablet":
+      case "Labtext":
+        return [...baseFields, "level", "technique", "form"].includes(fieldName);
+      default: 
+        return baseFields.includes(fieldName);
+    }
+  }
+  
+  console.table(fields);
+  return (<form className={"editBook"} onSubmit={parseResult}>{
+    Object.getOwnPropertyNames(fields).filter(isContentFields.bind(undefined, book.type)).map(
+    field => (<article key={field} ><label>{fields[field].title}</label>{fields[field].input}</article>))
+  }</form>);
 
   function fireCancel() {
     if (props.onCancel) {
@@ -442,7 +505,7 @@ export function EditBook(props) {
 
   function fireOk() {
     if (props.onOk) {
-      props.onOk(JSON.stringify(book));
+      props.onCommit(JSON.stringify(book));
     }
   }
 
@@ -539,6 +602,28 @@ export function Books({ title, books, onChange = null }) {
   const [mode, setMode] = useState("View")
   const nameRef = useId();
   const authorRef = useId();
+  
+  function fireChange(change) {
+    if (onChange) {
+      onChange(change);
+    }
+  }
+  
+  const commitEdit = (newBook) => {
+    if (books.find( (cursor) => (cursor.bookId === newBook.bookId))) {
+      fireChange({
+        propertyName: "books",
+        change: "replace",
+        value: newBook
+      });
+    } else {
+      fireChange({
+        propertyName: "books",
+        change: "create",
+        value: newBook
+      });
+    }
+  };
 
   return (
     <section className={"books"}>
@@ -565,7 +650,10 @@ export function Books({ title, books, onChange = null }) {
         </article>)
       })}
     </main>
-    <footer><form onSubmit={
+    <footer>
+    <header><BookEditor book={edited} onCommit={(target) => commitEdit(target)} onCancel={()=>{setEdited(null)}} /></header>
+    
+    <form onSubmit={
       (event) => {
         event.preventDefault();
         const [title, author] = [
@@ -681,6 +769,21 @@ export function Library(props) {
 
   const handleCollectionChange = (event, change, payload = null) => {
     alert(`Collection change ${change} with ${payload ? payload : "no payload"}`);
+    if (change) {
+      switch (change) {
+        case "add":
+          setCollections((old)=>(appendToCollection(old, payload)));
+          break;
+        case "insert":
+          setCollections((old)=>(insertToCollection(old, payload)));
+          break;
+        case "update":
+          setCollections((old)=>(replaceInCollection(old, payload)));
+            break;
+        case "delete":
+          setCollections((old)=>(deleteFromCollection(old, payload)));
+      }
+    }
   }
 
 
@@ -706,16 +809,29 @@ export function Library(props) {
             console.log(`Deleted book with id: ${payload.id}`)
             fireChange("books", change, payload)
           }
-
+         
+          break;
         case "insert":
           if (payload) {
             if (payload.index) {
-              insertBook(payload.index, patload.value);
+              insertBook(payload.index, payload.value);
             } else {
               addBook(payload.value, payload.id)
             }
           } else {
             console.log(`Missing added book`);
+          }
+          break;
+        case "update":
+          if (payload) {
+            if (payload.index) {
+              setBooks( books => books.map( (book, index) => (index === payload.index ? payload.value : book)));
+            } else {
+              const predicate = payload.id ? ((old)=>(old.id === payload.id)) : ((old) => (old == payload.value));
+              setBooks( (books) => (books.map( (book) => (predicate(book)?payload.value:book))
+                )
+              );
+            }
           }
       }
     }

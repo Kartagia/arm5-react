@@ -1,5 +1,35 @@
-let data = {
+/**
+ * The content identifier.
+ * @typedef {Object} ContentId
+ * @property {string} contentId The content identifier.
+ */
+ 
+/**
+ * @typedef {Object} CollectionId
+ * @property {string} colectionId The collection identifier.
+ */
+
+/**
+ * The book identifier with optional collection identifier.
+ * @typedef {Optional<CollectionId> & {bookId: string}} BookId
+ */
+
+/**
+ * The library.
+ * @type {LibraryModel} 
+ */
+var data = {
+  /**
+   * @type {import("./modules.library.js").CollectionModel[]}
+   */
   collections: [],
+  /**
+   * @type {import("./modules.library.js").ContentModel[]}
+   */
+  contents: [],
+  /**
+   * @type {import("./modules.library.js").bookModel[]}
+   */
   books: [
     {
       id: "ability.hermetic.summa.Principia_Magica",
@@ -37,6 +67,7 @@ let data = {
       contents: [
         {
           target: "Order of Hermes Lore",
+          targetSpeciality: "History",
           quality: 7
             },
         {
@@ -57,28 +88,20 @@ let data = {
 
 /**
  * Get the current library.
- * @return {import("./modules.library.js").LibraryModel} 
+ * @return {Readonly<import("./modules.library.js").LibraryModel>} 
  */
 export function getLibrary() {
   return { ...data };
 }
 
-/**
- * The content identifier.
- * @typedef {Object} ContentId
- * @property {string} contentId
- */
 
 /**
- * @typedef {Optional<ContentId> & {bookId: string}} BookId
- */
-
-/**
+ * Get book from library.
  * @param {BookId} props
- * @returns {[BookModel|undefined] The sought book model,or undefined value, if no such book exists.
+ * @returns {BookModel|undefined} The sought book model,or undefined value, if no such book exists.
  */
 export function getBook(props) {
-  const source = getTarget(props);
+  const source = getTarget({collectionId: props.collectionId});
   if (source) {
     return source.books.find(
       book => (book.id === props.bookId));
@@ -95,7 +118,7 @@ function createBookId(bookModel, options = {}) {
   segments.push("book");
   let candidate = segments.join(".");
   let counter = undefined;
-  while (getBook({collectionId: options.collectionId, bookId: candidate})) {
+  while (getBook({ collectionId: options.collectionId, bookId: candidate })) {
     if (counter) {
       counter++;
       segments[segments.length - 1] = `copy-${counter}`
@@ -109,20 +132,30 @@ function createBookId(bookModel, options = {}) {
 }
 
 /**
+ * @param {CollectionId|BookId} options
+ * @return {CollectionModel|BookModel|LibraryModel} The target for the options.
+ */
+export function getTarget(options) {
+  if (options.collectionId) {
+    const target = data.collections.find(cursor => (cursor.id === collectionId));
+    if (options.bookId) {
+      return target.books.find(book => book.id === options.BookId);
+    }
+    return target;
+  } else if (options.bookId) {
+    return data.books.find(book => book.id === options.BookId);
+  } else {
+    return data;
+  }
+}
+/**
+ * Add book to the library.
  * @param {import("./module.library.js").BookModel} bookModel The added book.
  * @param {Object} [options={}]
  * @param {string} [,options.collectionId] The collection of the book. 
  */
 export function addBook(bookModel, options = {}) {
 
-  function getTarget(options) {
-    if (options.collectionId) {
-      const target = data.collections.find(cursor => (cursor.id === collectionId));
-      return target;
-    } else {
-      return data;
-    }
-  }
   const target = getTarget(options);
   if (target) {
     let newId = bookModel.id || createBookId(bookModel, options);
@@ -131,6 +164,8 @@ export function addBook(bookModel, options = {}) {
       id: newId
     });
   } else {
-    throw Error("Could not add book to non-existing collection");
+    throw Error(`Could not add book to non-existing ${
+      options.colectionId ? "collection" : "library"
+    }`);
   }
 }
