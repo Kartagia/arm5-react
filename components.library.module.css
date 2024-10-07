@@ -1,5 +1,18 @@
 .history {
-  
+  display: flex;
+  flex-flow: column;
+}
+
+.history > .event {
+  display: block;
+  margin-left: 1em;
+}
+
+.history.brief {
+  display: block;
+}
+.history.brief > .event {
+  display: inline;
 }
 
 .title {
@@ -15,7 +28,6 @@
   color: silver;
   padding: 2mm;
 }
-
 
 .actionBar {
   float: right;
