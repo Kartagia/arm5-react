@@ -1,3 +1,63 @@
+
+/**
+ * Module containing utilities.
+ * @module utils
+ */
+
+/**
+ * The comparison result.
+ * - 0, if compared was equal to comparee.
+ * - 1, if compared was greater than comparee.
+ * - -1, if compared was less than comparee.
+ * - undefined, if compared and comparee were not comparable.
+ * @typedef {-1|0|1|undefined} ComparisonResult
+ */
+
+
+/**
+ * Comparator compares values of a type.
+ * @template TYPE The compared value.
+ * @callback Comparator
+ * @param {TYPE} compared The compared value.
+ * @param {TYPE} comparee The value compared with.
+ * @returns {ComparisonResult} The comparison result.
+ */
+
+
+/**
+ * The default compare using operator <, > and === (or == if not strict)
+ * @template [TYPE=any] The type of the compared values.
+ * @param {TYPE} compared The compared value.
+ * @param {TYPE} compare The value comparee with.
+ * @param {boolean} [strict=true] Is the comparison strict or loose. A strict
+ * comparison use strict equality and loose uses loose equality.
+ * @returns {ComparisonResult} The comparison result.
+ */
+export function defaultCompare(compared, compare, strict = true) {
+  return(compared < compare ? -1 : compared > compare ?  1 : (
+    strict ? compared === compare : compared == compare
+  ) ? 0 : undefined);
+}
+
+/**
+ * Compare two values.
+ * @template TYPE The compared value type.
+ * @param {TYPE} compared The compared value.
+ * @param {TYPE} comparee The value compared with.
+ * @param {Comparator<TYPE>} [comparator] The comparator.
+ * @returns {ComparisonResult} The comparison result.
+ */
+export function compare(compared, comparee, comparator = defaultCompare) {
+  return comparator(compared, comparee);
+}
+
+
+/**
+ * Convert the lower case word into title case.
+ * @param {string} word The word, whose first character is converted to upper case.
+ * @returns {string} The given string with first character changed to upper case.
+ * @todo Unicode support - works only on Main Language Plane at the moment.
+ */
 export function ucFirst(word) {
   const target = (typeof word === "string" ? word : ""+word);
   if (target) {
@@ -123,3 +183,183 @@ export function isPojo(value) {
 export default { ucFirst,
 composeId, decomposeId,
 escapeId, unescapeId, isPojo };
+/**
+ * The day of year.
+ * @typedef {Object} DayOfYear
+ * @property {Year} year The year into which the day belongs.
+ * @property {number|Day} dayOfYear The day of year.
+ */
+/**
+ * The temporal value representing a day.
+ * @typedef {Object} Day
+ * @property {number} day The day value. Starts with 1.
+ * @property {() => number} valueOf The value of the day.
+ * @property {( mode = undefined ) => string} toString The string representation of the
+ * day.
+ */
+/**
+ * Get the body of a numbers between 12 and 20 and tens between 20 and 100.
+ * @param {2|3|4|5|6|7|8|9} value The number of tens.
+ * @return {string} The number of tens as text.
+ */
+
+export function tensAsTextBody(value) {
+  switch (value) {
+    case 1:
+      return undefined;
+    case 2:
+      return "twent";
+    case 3:
+      return "thirt";
+    case 4:
+      return "fourt";
+    case 5:
+      return "fift";
+    case 6:
+      return "sixt";
+    case 7:
+      return "sevent";
+    case 8:
+      return "eight";
+    case 9:
+      return "ninet";
+    default:
+      throw new SyntaxError("Not a valid number of tens");
+  }
+}
+/**
+ * Get tens as text body. 
+ * @param {1|2|3|4|5|6|7|8|9} value The number of tens.
+ * @return {string} The number of tens as text.
+ */
+export function tensAsText(value) {
+  return (value === 1 ? "ten" : `${tensAsTextBody(value)}y`);
+}
+/**
+ * Tens as ordinal text.
+ * @param {1|2|3|4|5|6|7|8|9} value The number of tens.
+ * @return {string} The number of tens as ordinal text.
+ */
+export function tensAsOrdinal(value) {
+  return (value === 1 ? "tenth" : `${tensAsTextBody(value)}ieth`);
+}
+
+/**
+ * Convert an integer number into text.
+ * @param {number} value An integer value converted to text.
+ * @returns {string} The string containing the text representation of the given
+ * integer.
+ * @throws {SyntaxError} The given value is not a safe integer.
+ */
+export function numberAsText(value) {
+  if (!Number.isSafeInteger(value)) {
+    throw new SyntaxError("Value is not a number");
+  } else if (value === 0) {
+    return "zero";
+  } else if (value < 0) {
+    return `minus ${numberAsText(-value)}`;
+  } else if (value < 100) {
+    // Handling the situation with less than 100. 
+    if (value < 20) {
+      if (value <= 10) {
+        switch (value) {
+          case 1: return "one";
+          case 2: return "two";
+          case 3: return "three";
+          case 4: return "four";
+          case 5: return "five";
+          case 6: return "six";
+          case 7: return "seven";
+          case 8: return "eight";
+          case 9: return "nine";
+          case 10: return "ten";
+        }
+      } else {
+        switch (value % 10) {
+          case 1: return "eleven";
+          case 2: return "twelve";
+          default:
+            return `${tensAsText(value % 10)}een`;
+        }
+      }
+    } else {
+      const tens = Math.floor(value / 10);
+      const ones = value % 10;
+      return `${tensAsText(tens)}${ones === 0 ? "" : `-${numberAsText(ones)}`}`;
+    }
+  }
+  const magnitude = [null, null, "hundred", "thousand", null, null, "million", null, null, "billion", null, null, "trillion",
+    null, null, "quadrillion", null, null, "quintillion", null, null, "sextillion", null, null, "septillion", null, null,
+    "octillion", null, null, "nonillion"
+  ];
+  var magnitudeIndex = 0;
+  var significantValue = value;
+  // The length of the significant number in digits.
+  const signifacantLength = Math.ceil(Math.log(significantValue) / Math.log(10));
+  while (value % 10 === 0) {
+    magnitudeIndex++;
+    significantValue = significantValue / 10;
+  }
+  while (magnitudeIndex > 0 && magnitude[magnitudeIndex] === null) {
+    magnitudeIndex--;
+    significantValue *= 10;
+  }
+
+  var segments = [];
+  if (magnitude[magnitudeIndex] !== null) {
+    segments.push(magnitude[magnitudeIndex]);
+  }
+  while (significantValue > 0) {
+
+    var endMagnitudeIndex = magnitudeIndex + 1;
+    var remainder = 0;
+    while (endMagnitudeIndex < signifacantLength && endMagnitudeIndex < magnitude.length &&
+      magnitude[endMagnitudeIndex] === null) {
+      remainder = remainder * 10 + significantValue % 10;
+      significantValue = significantValue / 10;
+      endMagnitudeIndex++;
+    }
+    // Remainder contains the number converted to text.
+    segments.unshirt(numberAsText(remainder), magnitude[magnitudeIndex]);
+    magnitudeIndex = endMagnitudeIndex;
+  }
+  return segments.join(" ");
+}
+
+/**
+ * Convert an integer into an ordinal text.
+ * @param {number} value The integer value converted to ordinal. 
+ * @returns {string} The given value as text ordinal.
+ */
+export function numberAsOrdinalText(value) {
+  if (!Number.isSafeInteger(value)) {
+    throw new SyntaxError("Value is not a number");
+  }
+
+  const lastTwoDigits = value % 100;
+  if (lastTwoDigits === 0) {
+    if (value > 0) {
+      return `${numberAsText(value)}th`;
+    } else {
+      return `zeroeth`;
+    }
+  } else if (lastTwoDigits === 1) {
+    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${"first"}`;
+  } else if (lastTwoDigits === 2) {
+    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${"second"}`;
+  } else if (lastTwoDigits === 3) {
+    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${"third"}`;
+  } else if (lastTwoDigits < 10) {
+    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${tensAsTextBody(lastTwoDigits)}h`;
+  } else if (lastTwoDigits >= 10 && lastTwoDigits < 20) {
+    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${numberAsText(lastTwoDigits)}th`;
+  } else {
+    const lastDigit = value % 10;
+    if (lastDigit > 0) {
+      const tens = Math.floor(lastTwoDigits / 10);
+      return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${tensAsText(tens)}-${numberAsOrdinalText(lastDigit)}`;
+    } else {
+      return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${tensAsOrdinal(lastTwoDigits)}ieth`;
+    }
+  }
+}
