@@ -4,6 +4,25 @@
  * @module utils
  */
 
+
+/**
+ * Predicate testing a value.
+ * @template TYPE
+ * @callback Predicate
+ * @param {TYPE} value The tested value.
+ * @returns {boolean} True, if and only if the value passes the predicate.
+ */
+
+/**
+ * Get a valid value derived from a value.
+ * @template TYPE The valid value type.
+ * @template [EXCEPTION=any] The exception thrown by the checker on invalid value.
+ * @callback Checker
+ * @param {any} value The tested value.
+ * @returns {TYPE} The valid value derived from the given value.
+ * @throws {EXCEPTION} The value was not suitable.
+ */
+
 ////////////////////////////////////////////////////////////////////////////////
 // Compare
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,6 +81,86 @@ export function compare(compared, comparee, comparator = defaultCompare) {
   return comparator(compared, comparee);
 }
 
+
+/**
+ * The properties specific to an order.
+ * @template TYPE THe value type of the order.
+ * @typedef {Object} OrderProperties
+ * @property {string} [orderName] The name of the order.
+ */
+
+/**
+ * The methods of the order.
+ * @template TYPE The value type.
+ * @typedef {Object} OrderMethods
+ * @property {Converter<TYPE, TYPE|undefined>} successor Get the successor of a valid value.
+ * @property {Conveter<TYPE, TYPE|undefined} predecessor Get the predecessor of a valid value.
+ * @property {Predicate<TYPE>} validValue Is a value valid value of the order.
+ */
+
+/**
+ * Create a new order.
+ * @template TYPE The type of the ordered values.
+ * @param {import("./modules.range").Converter<TYPE, TYPE|undefined>} successor The function returning the successor of a valid value.
+ * @param {import("./modules.range").Converter<TYPE, TYPE|undefined>} predecessor The function returning the predecessor of a valid value.
+ * @param {Comparison<TYPE>} comparison The comparison comparing the values.
+ * @returns {Order<TYPE>} The order constructed from the given successor, and predecessor functions.
+ */
+export function createOrder(successor, predecessor, comparison = undefined, validValue = (/** @type {TYPE} */ _value) => (true)) {
+
+  return {
+    /**
+     * @type {Converter<TYPE, TYPE|undefined>}
+     */
+    successor(value) {
+      if (this.validValue(value)) {
+        return successor(value);
+      } else {
+        return undefined;
+      }
+    },
+    /**
+     * @type {Converter<TYPE, TYPE|undefined>}
+     */
+    predecessor(value) {
+      if (this.validValue(value)) {
+        return predecessor(value);
+      } else {
+        return undefined;
+      }
+    },
+    validValue,
+    compare(compared, comparee) {
+      return comparison ? comparison.compare(compared, comparee) : defaultCompare(compared, comparee);
+    }
+  }
+}
+
+/**
+ * Create order from comparison, successor, and predecessor function.
+ * @template TYPE The value type of the order.
+ * @param {Object} source The source value.
+ * @param {Comparison<TYPE>} source.comparison The comparison comparing the values.
+ * @param {import("./modules.range").Converter<TYPE, TYPE|undefined>} source.successor The function returning the successor of a valid value.
+ * @param {import("./modules.range").Converter<TYPE, TYPE|undefined>} source.predecessor The function returning the predecessor of a valid value.
+ * @param {Predicate<TYPE>} [source.validValue] The valid value test. Defaults to the comparing the value with itself returning a zero.
+ * @returns {Order<TYPE>} The order using the given comparator, predecessor, value validator, and successor. 
+ */
+export function createComparisonOrder(source = {}) {
+  const {comparison, predecessor, successor, validValue = undefined} = source;
+  return createOrder(successor, predecessor, comparison, validValue ?? ((value) => (comparison.compare(value, value) === 0)));
+}
+
+/**
+ * @template TYPE The value type.
+ * @typedef {Omit<Comparison<TYPE>, keysof OrderProperties<TYPE>>} OrderPropertyProps
+ */
+
+/**
+ * @template TYPE The value type.
+ * @typedef {Omit<Comparison<TYPE>, KeysOf<OrderMethods<TYPE>>> & OrderMethods<TYPE>} Order 
+ * 
+ */
 
 ////////////////////////////////////////////////////////////////////////////////
 // String operations
