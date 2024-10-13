@@ -4,6 +4,10 @@
  * @module utils
  */
 
+////////////////////////////////////////////////////////////////////////////////
+// Compare
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * The comparison result.
  * - 0, if compared was equal to comparee.
@@ -13,16 +17,23 @@
  * @typedef {-1|0|1|undefined} ComparisonResult
  */
 
-
 /**
  * Comparator compares values of a type.
- * @template TYPE The compared value.
+ * @template TYPE The compared value type.
  * @callback Comparator
  * @param {TYPE} compared The compared value.
  * @param {TYPE} comparee The value compared with.
  * @returns {ComparisonResult} The comparison result.
  */
 
+/**
+ * The comparison determines comparison used.
+ * @template TYPE the compared alue type.
+ * @typedef {Object} Comparison
+ * @property {Comparator<TYPE>} compare The comparison of the the values.
+ * @property {string} [name] The optional name of the comparison.
+ * @property {string} [uuid] The optional UUID identifier of hte comparison.
+ */
 
 /**
  * The default compare using operator <, > and === (or == if not strict)
@@ -52,6 +63,11 @@ export function compare(compared, comparee, comparator = defaultCompare) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// String operations
+////////////////////////////////////////////////////////////////////////////////
+
+
 /**
  * Convert the lower case word into title case.
  * @param {string} word The word, whose first character is converted to upper case.
@@ -66,6 +82,10 @@ export function ucFirst(word) {
     return "";
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Menu utilities.
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Get list property.
@@ -121,88 +141,10 @@ export function getList(props,keys, defaultValue = undefined) {
 }
 
 /**
- * Escape an HTML identifier.
- * @param {string} id The escaped value.
- * @returns {string} Valid HTML id.
- */
-export function escapeId(id) {
-  return id.map(
-    (result, code, index) => {
-      if (/[a-z]/i.test(code) ||
-      (index && /[-\d_]/u.test(code))) {
-        result.push(code);
-      } else {
-        result.push(`E::${code.codePointAt(0).toString(16)}::`);
-      }
-      return result;
-    }, []).join("");
-}
-
-/**
- * Recover the escaped identifier.
- * @param {string} id The valid HTML id.
- * @returns {string?} The original identifier, or an undefined value.
- */
-export function unescapeId(id) {
-  if (typeof id === "string" && /^[a-z][-\w.:]*$/i.test(id)) {
-    const escape = /E::(?<hex>[\da-f]+)::/ig;
-    let match;
-    while ( (match = escape.exec(id))) {
-      const replacement = String.fromCodePoint(Number.parseInt(match.groups("hex"), 16));
-      id = `${id.substring(0, match.index)}${replacement}${id.substring(match.index + match.length)}`;
-      escape.lastIndex -= match.length - Response.length;
-    }
-    return id;
-  } else {
-    return undefined;
-  }
-}
-
-/**
- * @param {string} id The identifier.
- * @param {string[]} ...prefix The prefixes.
- */
-export function composeId(id, ...prefix) {
-  
-  return `${prefix.map((prefixId) => escapeId(prefixId)).join(".")}.${escapeId(id)}`
-}
-
-export function decomposeId(id) {
-  const result = id.split(/\./).map(unescapeId);
-  if (result.length > 1) {
-    // Moving id to the front
-    result.unshift(result.pop());
-  }
-  return result;
-}
-
-export function isPojo(value) {
-  return typeof value === "object" && value.constructor.name === "Object";
-}
-
-export default { ucFirst,
-composeId, decomposeId,
-escapeId, unescapeId, isPojo };
-/**
- * The day of year.
- * @typedef {Object} DayOfYear
- * @property {Year} year The year into which the day belongs.
- * @property {number|Day} dayOfYear The day of year.
- */
-/**
- * The temporal value representing a day.
- * @typedef {Object} Day
- * @property {number} day The day value. Starts with 1.
- * @property {() => number} valueOf The value of the day.
- * @property {( mode = undefined ) => string} toString The string representation of the
- * day.
- */
-/**
  * Get the body of a numbers between 12 and 20 and tens between 20 and 100.
  * @param {2|3|4|5|6|7|8|9} value The number of tens.
  * @return {string} The number of tens as text.
  */
-
 export function tensAsTextBody(value) {
   switch (value) {
     case 1:
@@ -343,23 +285,124 @@ export function numberAsOrdinalText(value) {
     } else {
       return `zeroeth`;
     }
-  } else if (lastTwoDigits === 1) {
-    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${"first"}`;
+  }
+  const prefix = value > 100 ? numberAsText(Math.floor(value / 100 ) * 100) : ""; 
+  if (lastTwoDigits === 1) {
+    return `${prefix}${"first"}`;
   } else if (lastTwoDigits === 2) {
-    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${"second"}`;
+    return `${prefix}${"second"}`;
   } else if (lastTwoDigits === 3) {
-    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${"third"}`;
+    return `${prefix}${"third"}`;
   } else if (lastTwoDigits < 10) {
-    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${tensAsTextBody(lastTwoDigits)}h`;
+    return `${prefix}${tensAsTextBody(lastTwoDigits)}h`;
   } else if (lastTwoDigits >= 10 && lastTwoDigits < 20) {
-    return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${numberAsText(lastTwoDigits)}th`;
+    return `${prefix}${numberAsText(lastTwoDigits)}th`;
   } else {
     const lastDigit = value % 10;
     if (lastDigit > 0) {
       const tens = Math.floor(lastTwoDigits / 10);
-      return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${tensAsText(tens)}-${numberAsOrdinalText(lastDigit)}`;
+      return `${prefix}${tensAsText(tens)}-${numberAsOrdinalText(lastDigit)}`;
     } else {
-      return `${value >= 100 ? numberAsText(Math.floor(value/100)*100): ""}${tensAsOrdinal(lastTwoDigits)}ieth`;
+      return `${prefix}${tensAsOrdinal(lastTwoDigits)}ieth`;
     }
   }
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Identifiers
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * The identifier data type is a string matching an identifier.
+ * @typedef {string & {__type__: "htmlId"}} HtmlId
+ */
+
+/**
+ * Escape an HTML identifier.
+ * @param {string} id The escaped value.
+ * @returns {HtmlId} Valid HTML id with invalid characters replaced with escape "E::<codepointHexValue>::", where
+ * <codePointHexValue> is the hex value of the escaped code point.
+ */
+export function escapeId(id) {
+  return id.map(
+    (result, code, index) => {
+      if (/[a-z]/i.test(code) ||
+      (index && /[-\d_]/u.test(code))) {
+        result.push(code);
+      } else {
+        result.push(`E::${code.codePointAt(0).toString(16)}::`);
+      }
+      return result;
+    }, []).join("");
+}
+
+/**
+ * Recover the escaped identifier.
+ * @param {HtmlId} id The valid HTML id.
+ * @param {Object} [options] The options.
+ * @param {string} [options.message] The error message of the option.
+ * @returns {string} The original identifier, or an undefined value.
+ * @throws {SyntaxError} The given identifier was not a valid html identifier.
+ */
+export function unescapeId(id, options={}) {
+  const {message = "Invalid identifier"} = options;
+  if (typeof id === "string" && /^[a-z][-\w.:]*$/i.test(id)) {
+    const escape = /E::(?<hex>[\da-f]+)::/ig;
+    let match;
+    while ( (match = escape.exec(id))) {
+      const replacement = String.fromCodePoint(Number.parseInt(match.groups("hex"), 16));
+      id = `${id.substring(0, match.index)}${replacement}${id.substring(match.index + match.length)}`;
+      escape.lastIndex -= match.length - Response.length;
+    }
+    return id;
+  } else {
+    throw SyntaxError(message);
+  }
+}
+
+/**
+ * Compose an identifier from strings.
+ * @param {string} id The identifier.
+ * @param {string[]} ...prefix The prefixes.
+ * @returns {HtmlId} A valid HTML identifier with escaped prefixed combined with escaped identifier.
+ */
+export function composeId(id, ...prefix) {
+  
+  return `${prefix.map((prefixId) => escapeId(prefixId)).join(".")}.${escapeId(id)}`
+}
+
+/**
+ * Decompose the original identifier strigns from the HtmlId.
+ * @param {HtmlId} id The escaped possilby prefixed identifier.
+ * @returns {string[]} The array containing the identifier sections.
+ */
+export function decomposeId(id) {
+  const result = id.split(/\./).map(unescapeId);
+  if (result.length > 1) {
+    // Moving id to the front
+    result.unshift(result.pop());
+  }
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// POJO
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Test, if a value is a POJO.
+ * @param {*} value The stested value.
+ * @returns {boolean} True, if and only if the value is POJO.
+ */
+export function isPojo(value) {
+  return typeof value === "object" && value.constructor.name === "Object";
+}
+
+////////////////////////////////////////////////////////////////////
+// Default exports
+////////////////////////////////////////////////////////////////////
+
+export default { ucFirst,
+composeId, decomposeId,
+escapeId, unescapeId, isPojo };
