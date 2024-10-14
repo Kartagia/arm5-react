@@ -1,5 +1,5 @@
 
-import { compare, numberAsOrdinalText } from "./module.utils";
+import { compare, numberAsOrdinalText, toOrdinal } from "./module.utils";
 import { HermeticRecknoning } from "./modules.temporal";
 
 /**
@@ -317,29 +317,6 @@ export function createMonthOfYear(year, month) {
     }
   };
 }
-
-
-/**
- * Get ordinal of a number.
- * @param {number} value The integer value.
- * @returns {string|undefined} The string containing the ordinal of the given integer, or an undefined
- * value, if none exists.
- */
-export function toOrdinal(value) {
-  if (Number.isSafeInteger(value)) {
-    const lastDigit = Math.abs(value % 10);
-    switch (lastDigit) {
-      case 1: return `${value}st`;
-      case 2: return `${value}nd`;
-      case 3: return `${value}rd`;
-      default:
-        return `${value}th`;
-    }
-  } else {
-    return undefined;
-  }
-}
-
 
 /**
  * The day of month.
