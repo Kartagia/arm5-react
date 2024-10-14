@@ -408,6 +408,46 @@ export function numberAsOrdinalText(value) {
 }
 
 
+/**
+ * Convert a number to numeric ordinal.
+ * @param {number|bigint} value The integer value.
+ * @returns {string} The number as numeric ordinal. 
+ */
+export function toOrdinal(value) {
+  var twoDigits;
+  switch (typeof value) {
+    case "bigint": 
+      twoDigits = Math.abs(BigInt.asIntN(value)) % 100;
+      if (twoDigits <= 10 || twoDigits > 13) {
+        // The last digit matters, not two last digits.
+        twoDigits = twoDigits % 10;
+      }
+      break;
+    case "number": 
+      if (Number.isSafeInteger(value)) {
+        twoDigits = Math.abs(value) % 100;
+        if (twoDigits <= 10 || twoDigits > 13) {
+          // The last digit matters, not two last digits.
+          twoDigits = twoDigits % 10;
+        }
+        break;
+      }
+    default: 
+      throw new SyntaxError("Not an integer number");
+  }
+  switch (twoDigits) {
+    case 1:
+      return `${value}st`;
+    case 2:
+      return `${value}nd`;
+    case 3:
+      return `${value}rd`;
+    default:
+      return `${value}th`;
+  }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Identifiers
 ////////////////////////////////////////////////////////////////////////////////
