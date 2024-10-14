@@ -407,6 +407,31 @@ export function numberAsOrdinalText(value) {
   }
 }
 
+/**
+ * Get the ordinal suffix of a number.
+ * @param {bigint|number} value The integer value, whose ordinal suffix is queried.
+ * @returns {string} The ordinal suffix of the number.
+ * @throws {SyntaxError} The value is not an integer.
+ */
+export function ordinalSuffix(value) {
+  const type = typeof value;
+  if (type === "bigint" || (type === "number" && Number.isSafeInteger(value))) {
+    const twoDigits = Math.abs(type === "bigint" ? BigInt.asIntN(value) : value);
+    if (twoDigits > 10 && twoDigits < 14) {
+      return "th";
+    } else {
+      switch (twoDigits % 10) {
+        case 1: return "st";
+        case 2: return "nd";
+        case 3: return "rd";
+        default:
+          return "th";
+      }
+    }
+  } else {
+    throw new SyntaxError("Not an integer value");
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Identifiers
