@@ -5,7 +5,7 @@
   "main": "server.mjs",
   "scripts": {
     "test": "dotenvx run -f .batch.test.env -- mocha",
-    "dev": "dotenvx run -f .batch.dev.env -- mocha",
+    "dev": "dotenvx run -f .batch.dev.env -- node index.mjs",
     "start": "dotenvx run -f .production.env -- node server.mjs", 
     "dev-web": "dotenvx run -f .dev.env -- node server.mjs",
     "test-web": "dotenvx run -f .test.env -- node server.mjs"
