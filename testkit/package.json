@@ -1,0 +1,25 @@
+{
+  "name": "testkit",
+  "version": "1.0.0",
+  "description": "The test kit to run HTML Javascript program with express test server",
+  "main": "server.mjs",
+  "scripts": {
+    "test": "dotenvx run -f .test.env -- mocha",
+    "dev": "dotenvx run -f .dev.env -- node server.mjs",
+    "run": "dotenvx run -f .production.env -- node server.mjs"
+  },
+  "keywords": [
+    "test",
+    "express"
+  ],
+  "author": "Antti Kautiainen",
+  "license": "MIT",
+  "dependencies": {
+    "@dotenvx/dotenvx": "^1.19.3",
+    "express": "^4.21.1"
+  },
+  "devDependencies": {
+    "chai": "^5.1.1",
+    "mocha": "^10.7.3"
+  }
+}
