@@ -15,3 +15,13 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+
+# NODE.JS
+node_modules
+package-lock.json
+
+# Environment files
+*.env
+!example.*.env
+!*.example.*.env
