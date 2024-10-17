@@ -4,9 +4,11 @@
   "description": "The test kit to run HTML Javascript program with express test server",
   "main": "server.mjs",
   "scripts": {
-    "test": "dotenvx run -f .test.env -- mocha",
-    "dev": "dotenvx run -f .dev.env -- node server.mjs",
-    "run": "dotenvx run -f .production.env -- node server.mjs"
+    "test": "dotenvx run -f .batch.test.env -- mocha",
+    "dev": "dotenvx run -f .batch.dev.env -- mocha",
+    "start": "dotenvx run -f .production.env -- node server.mjs", 
+    "dev-web": "dotenvx run -f .dev.env -- node server.mjs",
+    "test-web": "dotenvx run -f .test.env -- node server.mjs"
   },
   "keywords": [
     "test",
