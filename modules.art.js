@@ -1,5 +1,21 @@
 
 
+ /**
+  * The Art Type defines enumeration of the Art types.
+  * @typedef {Object} ArtType
+  * @readonly
+  * @enum {string}
+  */
+
+ /**
+  * @type {Record<string, ArtType>}
+  */
+ export const ArtTypes = {
+  TECHNIQUE: "Form",
+  FORM: "Technique"
+}
+
+
 /**
  * Hermetic Art defines an Art of the mages.
  * @typedef {Object} Art
@@ -8,16 +24,6 @@
  * @property {ArtType} type The art type.
  */
  
- /**
-  * The Art Type defines enumeration of the Art types.
-  * @typedef ArtType
-  * @readonly
-  * @enum {string}
-  */
-export const ArtType = {
-  TECHNIQUE: "Form",
-  FORM: "Technique"
-}
 
 
 /**
@@ -42,13 +48,13 @@ const arts = getArts().reduce(
  * Constant of the Art type for Hermetic Forms.
  * @type {ArtType}
  */
-export const FORM = ArtType.FORM;
+export const FORM = ArtTypes.FORM;
 
 /**
  * Constant of the Art type for Hermetic Techniques.
  * @type {ArtType}
  */
-export const TECHNIQUE = ArtType.TECHNIQUE;
+export const TECHNIQUE = ArtTypes.TECHNIQUE;
 
 /**
  * Get all techniques.
@@ -122,7 +128,7 @@ export function getArts() {
 
 export default {
   
-  ArtType, 
+  ArtType: ArtTypes, 
   getArts,
   getForms,
   getTechniques,
