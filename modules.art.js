@@ -10,10 +10,10 @@
  /**
   * @type {Record<string, ArtType>}
   */
- export const ArtTypes = {
+ export const ArtTypes = Object.freeze({
   TECHNIQUE: "Form",
   FORM: "Technique"
-}
+});
 
 
 /**
@@ -28,6 +28,7 @@
 
 /**
  * Mapping from art name to Art implementation.
+ * @type {Record<string, Art}
  */
 const arts = getArts().reduce(
   (result, art) => {
@@ -75,8 +76,9 @@ export function getForms() {
 /**
  * Create a new art.
  * @param {string} name The name of the created art.
- * @param {string} [abbrev] The abbreviation of the art. @default The two first letters of the name.
+ * @param {string} [abbrev] The abbreviation of the art. Defaults to the two first letters of the name.
  * @param {ArtType} [type=FORM] The art type of the created art.
+ * @returns {Art} The created art.
  * @throws {Error} Any parameter was invalid.
  */
 export function createArt(name, abbrev = undefined, type=FORM) {
@@ -90,7 +92,7 @@ export function createArt(name, abbrev = undefined, type=FORM) {
      * The name of the art.
      * @type {string}
      */
-    name: name,
+    name,
     /**
      * The short abbreviation of the art.
      * @type {string}
@@ -103,10 +105,25 @@ export function createArt(name, abbrev = undefined, type=FORM) {
     type: type,
   };
 }
+
+/**
+ * Create a new technique.
+ * @param {string} name The name of the technique.
+ * @param {string} [abbrev] The abbreviation of the technique. Defaults to the first two letters of the name.
+ * @returns {Art} An Art with type of technique. and given name and abbreviation.
+ * @throws {Error} The name or abbreviation was invalid.
+ */
 export function createTechnique(name, abbrev = undefined) {
   return createArt(name, abbrev, TECHNIQUE);
 }
 
+/**
+ * Create a new form.
+ * @param {string} name The name of the form.
+ * @param {string} [abbrev] The abbreviation of the technique. Defaults to the first two letters of the name.
+ * @returns {Art} An Art with type of form, and given name and abbreviation.
+ * @throws {Error} The name or abbreviation was invalid.
+ */
 export function createForm(name, abbrev = undefined) {
   return createArt(name, abbrev, FORM);
 }
@@ -128,7 +145,7 @@ export function getArts() {
 
 export default {
   
-  ArtType: ArtTypes, 
+  ArtTypes, 
   getArts,
   getForms,
   getTechniques,
