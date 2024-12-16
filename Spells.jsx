@@ -63,7 +63,7 @@ export function ArtSelector(props) {
         return (<MenuItem key={key} value={value}>{caption}</MenuItem>);
     };
 
-    return (<FormControl>
+    return (<FormControl disabled={props.disabled}>
         <InputLabel id={labelId}>{props.label}</InputLabel>
         <Select name={props.name} id={props.id} value={value} onChange={
             (event) => {
@@ -112,8 +112,11 @@ export default function Spells(props) {
     ]);
     const [baseGuidelines, setBaseGuidelines] = useState(props.guidelines ? props.guidelines : []);
     const [guidelines, setGuidelines] = useState(baseGuidelines);
-    const [formFilter, setFormFilter] = useState();
-    const [techFilter, setTechFilter] = useState();
+    const [techFilter, setTechFilter] = useState("All");
+    const [formFilter, setFormFilter] = useState("All");
+    const [disableFormSelector, setDisableFormSelector] = useState(false);
+    const [disableTechSelector, setDisableTechSelector] = useState(false);
+    const [newSpell, setNewSpell] = useState({});
     const techLabel = "Technique";
     const formLabel = "Form";
     const levelLebel = "Level";
@@ -129,14 +132,16 @@ export default function Spells(props) {
     const formLabelId = `${formId}.label`;
     const techLabelId = `${techId}.label`;
     const guidelineLabelId = `${guidelineId}.label`;
-    useEffect(() => {
-        setGuidelines(filterGuidelines(formFilter, techFilter, baseGuidelines));
-    }, [formFilter, techFilter, baseGuidelines]);
+
+    const keyFunc = (guideline) => `${guideline.technique}.${guideline.form}.${guideline.level}.${guideline.name}`;
+    const valueFunc = keyFunc;
+    const captionFunc = (guideline) => `${guideline.name}${guideline.description == null ? "" : ` ${guideline.description}`}`;
 
     const filterGuidelines = (formFilter = undefined, techFilter = undefined, guidelines = []) => {
-        return guidelines.filter(guideline => (
-            (formFilter == undefined || formFilter(guideline.form)) ||
-            (techFilter == undefined || techFilter(guideline.technique))
+        return guidelines.filter(
+            guideline => (
+            ( (formFilter == null || formFilter === "All" || guideline.form === formFilter) &&
+            (techFilter == null || techFilter === "All" || guideline.techninique === guideline.technique))
         )
         );
     };
@@ -147,18 +152,43 @@ export default function Spells(props) {
             spell => (<Spell key={`${spell.name}(${spell.technique}${spell.form}${spell.level})${spell.ref ? `${spell.ref.toString()}` : ""}`} data={spell} />)
         ))}</main>
         <footer>
-            <ArtSelector label={techLabel} values={techniques} onChange={
-                event => { alert(`Changing technique to ${event.target.value}`)}
-            }/>
-            <ArtSelector label={formLabel} values={forms} onChange={
-                event => { alert(`Changing form to ${event.target.value}`)}
-            }/>
-            <FormControl>
+            <ArtSelector label={techLabel} values={["All", ...techniques]} disabled={disableTechSelector} value={techFilter} onChange={
+                event => {
+                    setTechFilter(event.target.value);
+                }
+            } />
+            <ArtSelector label={formLabel} values={["All", ...forms]} disabled={disableFormSelector} value={formFilter} onChange={
+                event => {
+                    setFormFilter(event.target.value);
+                }
+
+            } />
+            <FormControl width="100%">
                 <InputLabel className="element" id={guidelineLabelId}>{guidelineLabel}</InputLabel>
-                <Select className="element" labelId={guidelineLabelId} name="guideline" defaultValue={guidelines.length > 0 ? guidelines[0] : "none"}
+                <Select className="element"
+                    onChange={(event, child = undefined) => {
+                        if (event.target.value == "none") {
+                            setNewSpell(current => (Object.getOwnPropertyNames(current).filter((prop) => (prop != "guideline")).reduce(
+                                (result, prop) => ({...result, [prop]: current[prop]}), {}
+                            )));
+                            setDisableTechSelector(false);
+                            setDisableFormSelector(false);
+                        } else {
+                            const [tech, form, level, name] = event.target.value.split(".");
+                            alert(`Changing spell form to ${form}\nChanging spell tech to ${tech}\nChanging spell level to ${level}\n`);
+                            setNewSpell(current => ({ ...current, guideline: event.target.value }));
+                            setTechFilter(tech);
+                            setFormFilter(form);
+                            setDisableTechSelector(true);
+                            setDisableFormSelector(true);
+                        }
+                    }}
+                    labelId={guidelineLabelId} name="guideline" value={(newSpell.guideline ? newSpell.guideline : "none")}
                     id={guidelineId}>
                     <MenuItem key="none" value="none"><i>(Select guideline)</i></MenuItem>
-                    {guidelines.map(item => (<MenuItem key={item} value={item.value}>{item.name}{item.description}</MenuItem>))}
+                    {guidelines.filter( guideline => (
+                        (techFilter === "All" || techFilter === guideline.technique) && (formFilter === "All" || formFilter === guideline.form)
+                    )).map(item => (<MenuItem key={keyFunc(item)} value={valueFunc(item)}>{captionFunc(item)}</MenuItem>))}
                 </Select>
             </FormControl>
         </footer>
