@@ -1,0 +1,48 @@
+
+:root {
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: light) {
+    .element {
+        background-color: #c9c9c9;
+        color: #000080;
+    }
+
+    html {
+        background-color: #808080;
+        color: #000060
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .element {
+    background-color: #000080;
+    color: #c9c9c9;
+    }
+
+    html {
+        background-color: #000060;
+        color: #808080;
+    }
+}
+
+header, main, footer {
+    margin-top: 1px;
+    padding: 0.1em 1em 0.1em 1em;
+    min-height: 1em;
+    border-radius: 5px;
+    border-color: #909090;
+    border-width: 2px;
+    border-style: solid;
+}
+
+header > h1 {
+    text-align: center;
+    padding: 0.1em 0em;
+    margin: 0;
+}
+
+html {
+    color-scheme: dark;
+}
