@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<svg version="1.1"
+     width="200" height="200"
+     xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="black" />
+
+  <circle cx="100" cy="100" r="80" fill="orange" stroke="grey" />
+
+  <text x="100" y="125" font-family="Arial" font-size="60" text-anchor="middle" stroke="#a9a9a9" fill="black">ArM5</text>
+
+</svg>
