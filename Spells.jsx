@@ -176,7 +176,7 @@ export default function Spells(props) {
                         } else {
                             const [tech, form, level, name] = event.target.value.split(".");
                             alert(`Changing spell form to ${form}\nChanging spell tech to ${tech}\nChanging spell level to ${level}\n`);
-                            setNewSpell(current => ({ ...current, guideline: event.target.value }));
+                            setNewSpell(current => ({ ...current, guideline: event.target.value, technique: tech, form, baseLevel: level }));
                             setTechFilter(tech);
                             setFormFilter(form);
                             setDisableTechSelector(true);
