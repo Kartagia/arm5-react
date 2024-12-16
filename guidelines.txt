@@ -1,0 +1,131 @@
+
+Creo Animal
+Level 1: Give an animal a +1 bonus to Recovery rolls.
+Level 2: Give an animal a +3 bonus to Recovery rolls.
+Preserve a corpse from decay.
+Level 3: Give an animal a +6 bonus to Recovery rolls.
+Level 4: Give an animal a +9 bonus to Recovery rolls.
+Level 5: Create an animal product, such as spidersilk or wool. (Note that an Individual is a single hair, a single hide, or a single tusk.)
+Create an insect or similar bug.
+Give an animal a +12 bonus to Recovery rolls.
+Level 10: Create the corpse of an animal.
+Create a bird, reptile, fish, or amphibian.
+Give an animal a +15 bonus to Recovery rolls.
+Level 15: Heal a Light Wound.
+Give an animal a +18 bonus to Recovery rolls.
+Create a mammal.
+Cause an animal to reach full maturity over the course of a single day or night. This accelerated maturation only applies during the spell's Duration, and thus full effect requires a Sun Duration spell cast early in the day or night.
+Level 20: Heal a Medium Wound.
+Give an animal a +21 bonus to Recovery rolls.
+Cause an animal to reach full maturity over the course of about two hours.
+Level 25: Stop the progress of a disease.
+Heal a Heavy Wound.
+Restore a lost sense.
+Restore a lost limb.
+Cure a disease, counteracting its effects. (Unless cast as a Momentary Ritual, this is the same as stopping the progress of a disease.)
+Cause an animal to reach full maturity over the course of ten Diameters (twenty minutes).
+Level 30: Heal an Incapacitating Wound.
+Increase one of an animal's Characteristics by one point, to no more than the average score for that kind of animal.
+Cause an animal to reach full maturity over the course of a single Diameter.
+Level 35: Heal all wounds.
+Increase one of an animal's Characteristics by one point, to no more than one higher than the average score for that kind of animal.
+Level 40: Increase one of an animal's Characteristics by one point, to no more than two higher than the average score for that kind of animal.
+Cause an animal to reach full maturity in a moment.
+Level 45: Increase one of an animal's Characteristics by one point, to no more than three higher than the average score for that kind of animal.
+Level 50: Create a magical beast. When creating a magical creature, the Magic Might of the creature cannot exceed the level of the spell, and requisites must be included for any special powers (for example, Ignem if it can breathe fire, Rego and Mentem if it can control people's minds). A Vim requisite, for the magical nature, is always required.
+Increase one of an animal's Characteristics by one point, to no more than four higher than the average score for that kind of animal.
+Level 55: Increase one of an animal's Characteristics by one point, to no more than five higher than the average score for that kind of animal. A greater increase is not within the natural range for the animal, and thus cannot be effected by Creo magic.
+Level 75: Raise an animal from the dead.
+
+Intellego Animal
+Level 1: Get a mental image of an animal.
+Level 3: Sense the state of consciousness of a beast.
+Get general information about an animal’s body.
+Level 4: Sense the dominant drive of a beast.
+Learn a specific fact about an animal’s body.
+Level 5: Learn the origin, age, and history of something made of animal products.
+Level 10: Speak with an animal.
+Read an animal's surface thoughts. 
+Level 15: Read the recent memories of a beast.
+Level 20: Thoroughly probe the mind of a beast. 
+
+Muto Animal
+Level 1: Make a superficial change to something made of animal products (like changing its color).
+Level 2: Make a major change to something made of animal products that preserves the substance (for example, turn a leather jerkin into a saddle).
+Make a superficial change to a beast.
+Level 3: Change an animal's limb.
+Change something made of animal products into a different animal product.
+Level 4: Make a major change in a beast, while leaving it recognizably the same sort of animal (for example, make a horse bigger and change its color).
+Change something made of animal products in a minor unnatural way.
+Level 5: Change an animal into a different animal.
+Change an animal in a minor way so that it is no longer natural (for example, change the color of a horse's coat to match the covenant's coat of arms).
+Change something made of animal products in a major unnatural way.
+Level 10: Change an animal into a human (though it retains its animal mentality and does not gain a soul, requires a Corpus requisite).
+Change an animal into a plant (requires a Herbam requisite). 
+Level 15: Change an animal in a major unnatural way (for example, give a horse claws, fangs, and scaly armored skin).
+Change an animal into a non-living item (appropriate requisite required). 
+Level 25: Radically change an animal in an unnatural way (for example, give a horse wings). Give an animal a 'magical' ability, such as the ability to breathe fire (requires a requisite for the ability).
+
+Perdo Animal
+Level 2: Damage something made of animal products.
+Level 3: Do superficial damage to a beast (for example, remove its hair).
+Level 4: Destroy something made of animal products.
+Cause a beast pain, but do no real damage.
+Make a beast lose one Fatigue level.
+Level 5: Injure an animal so that it is hampered, but not damaged. For example, make a horse lame, a bird lose its voice, or weaken the scales of a serpent. This roughly halves the effectiveness of the targeted thing. Recovery as from a Light Wound.
+Destroy an animal's corpse.
+Inflict a Light Wound.
+Level 10: Inflict a Medium Wound.
+Level 15: Destroy one of a beast's minor senses.
+Inflict a Heavy Wound.
+Cripple a beast's limb, so that it is unusable but could heal.
+Age a beast by one-twelfth of its natural lifespan. Only affects beasts that have already reached maturity.
+Level 20: Inflict an Incapacitating Wound.
+Destroy or sever a beast's limb, so that it cannot naturally regain it.
+Destroy one of a beast's major senses.
+Level 30: Kill an animal.
+Level 40: Destroy one property of an animal, such as its weight or aggression.
+
+Rego Animal
+Level 1: Manipulate items made from animal products.
+Level 2: Plant a single suggestion in the mind of an animal.
+Protect the target from animal attacks (only affects animals without supernatural abilities).
+Treat items made of animal products.
+Level 3: Treat and process items made of animal products.
+Level 4: Calm an animal.
+Level 5: Manipulate an animal's emotions.
+Paralyze an animal.
+Ward against animals or objects made from animal products. (Touch, Ring, Circle)
+Level 5: Control a disembodied spirit associated with Animal.
+Cause vermin to spontaneously generate in appropriate matter, such as flesh, plants, soil, or water.
+Level 10: Make an animal completely passive.
+Transport an animal instantly up to 5 paces. Non-living animal products are transported with Rego Terram. Add 1 magnitude to increase the distance to 50 paces, 2 magnitudes for 500 paces, 3 magnitudes for 1 league, 4 magnitudes for seven leagues, and 5 magnitudes to a place for which you have an Arcane Connection.
+Level 15: Completely control an animal.
+Summon a disembodied spirit associated with Animal.
+
+Creo Aquam
+General: Create a corrosive substance doing +(Level) damage. Increasing the range to more than Touch is a very good idea.
+Level 2: Fill a container with water (or some other natural liquid, with appropriate requisites). 
+Level 3: Create water (or some other natural liquid) that is not contained (for example, spread over a surface).
+Create ice in a natural shape, such as a floe or icicle.
+Level 4: Create water (or some other natural liquid) in an unnatural shape (for example, in a sphere over someone's head) — but water so created will behave normally.
+Create a spring with a low rate of flow.
+Level 5: Create a poison that causes a Light Wound.
+Create a spring with a high rate of flow.
+Level 10: Create a geyser with a very high rate of flow.
+Create poison that causes a Medium Wound.
+Level 15: Create poison that causes a Heavy Wound.
+Level 20: Create a poison that causes an Incapacitating Wound.
+Level 25: Create a poison that causes a Fatal Wound.
+Create a water elemental from a base amount of elemental material. (Ritual)
+
+Intellego Aquam
+Level 1: Make a sense unaffected by water.
+Level 2: Get an image of water within range.
+Level 3: Get an image of water and its immediate surroundings within range.
+Learn the natural properties of a liquid.
+Level 4: Learn the natural properties of a mixture of liquids.
+Level 5: Learn the magical properties of a liquid.
+Level 10: Learn the magical properties of a mixture of liquids.
+Level 15: Speak with a natural body of water.
+Level 20: Speak with an artificial body of water (like a fountain).

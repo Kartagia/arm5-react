@@ -1,0 +1,259 @@
+{
+  "Animal": {
+     "Creo": {
+        "1": [
+
+  { "form": "Animal", "technique": "Creo", "level": 1, "name":"Give an animal a +1 bonus to Recovery rolls.", "description":"null" }      ],
+        "2": [
+
+  { "form": "Animal", "technique": "Creo", "level": 2, "name":"Give an animal a +3 bonus to Recovery rolls.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 2, "name":"Preserve a corpse from decay.", "description":"null" }      ],
+        "3": [
+
+  { "form": "Animal", "technique": "Creo", "level": 3, "name":"Give an animal a +6 bonus to Recovery rolls.", "description":"null" }      ],
+        "4": [
+
+  { "form": "Animal", "technique": "Creo", "level": 4, "name":"Give an animal a +9 bonus to Recovery rolls.", "description":"null" }      ],
+        "5": [
+
+  { "form": "Animal", "technique": "Creo", "level": 5, "name":"Create an animal product, such as spidersilk or wool.", "description":"(Note that an Individual is a single hair, a single hide, or a single tusk.)" },
+  { "form": "Animal", "technique": "Creo", "level": 5, "name":"Create an insect or similar bug.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 5, "name":"Give an animal a +12 bonus to Recovery rolls.", "description":"null" }      ],
+        "10": [
+
+  { "form": "Animal", "technique": "Creo", "level": 10, "name":"Create a bird, reptile, fish, or amphibian.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 10, "name":"Create the corpse of an animal.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 10, "name":"Give an animal a +15 bonus to Recovery rolls.", "description":"null" }      ],
+        "15": [
+
+  { "form": "Animal", "technique": "Creo", "level": 15, "name":"Cause an animal to reach full maturity over the course of a single day or night.", "description":"This accelerated maturation only applies during the spell's Duration, and thus full effect requires a Sun Duration spell cast early in the day or night." },
+  { "form": "Animal", "technique": "Creo", "level": 15, "name":"Create a mammal.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 15, "name":"Give an animal a +18 bonus to Recovery rolls.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 15, "name":"Heal a Light Wound.", "description":"null" }      ],
+        "20": [
+
+  { "form": "Animal", "technique": "Creo", "level": 20, "name":"Cause an animal to reach full maturity over the course of about two hours.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 20, "name":"Give an animal a +21 bonus to Recovery rolls.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 20, "name":"Heal a Medium Wound.", "description":"null" }      ],
+        "25": [
+
+  { "form": "Animal", "technique": "Creo", "level": 25, "name":"Cause an animal to reach full maturity over the course of ten Diameters (twenty minutes).", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 25, "name":"Cure a disease, counteracting its effects.", "description":"(Unless cast as a Momentary Ritual, this is the same as stopping the progress of a disease.)" },
+  { "form": "Animal", "technique": "Creo", "level": 25, "name":"Heal a Heavy Wound.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 25, "name":"Restore a lost limb.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 25, "name":"Restore a lost sense.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 25, "name":"Stop the progress of a disease.", "description":"null" }      ],
+        "30": [
+
+  { "form": "Animal", "technique": "Creo", "level": 30, "name":"Cause an animal to reach full maturity over the course of a single Diameter.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 30, "name":"Heal an Incapacitating Wound.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 30, "name":"Increase one of an animal's Characteristics by one point, to no more than the average score for that kind of animal.", "description":"null" }      ],
+        "35": [
+
+  { "form": "Animal", "technique": "Creo", "level": 35, "name":"Heal all wounds.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 35, "name":"Increase one of an animal's Characteristics by one point, to no more than one higher than the average score for that kind of animal.", "description":"null" }      ],
+        "40": [
+
+  { "form": "Animal", "technique": "Creo", "level": 40, "name":"Cause an animal to reach full maturity in a moment.", "description":"null" },
+  { "form": "Animal", "technique": "Creo", "level": 40, "name":"Increase one of an animal's Characteristics by one point, to no more than two higher than the average score for that kind of animal.", "description":"null" }      ],
+        "45": [
+
+  { "form": "Animal", "technique": "Creo", "level": 45, "name":"Increase one of an animal's Characteristics by one point, to no more than three higher than the average score for that kind of animal.", "description":"null" }      ],
+        "50": [
+
+  { "form": "Animal", "technique": "Creo", "level": 50, "name":"Create a magical beast.", "description":"When creating a magical creature, the Magic Might of the creature cannot exceed the level of the spell, and requisites must be included for any special powers (for example, Ignem if it can breathe fire, Rego and Mentem if it can control people's minds). A Vim requisite, for the magical nature, is always required." },
+  { "form": "Animal", "technique": "Creo", "level": 50, "name":"Increase one of an animal's Characteristics by one point, to no more than four higher than the average score for that kind of animal.", "description":"null" }      ],
+        "55": [
+
+  { "form": "Animal", "technique": "Creo", "level": 55, "name":"Increase one of an animal's Characteristics by one point, to no more than five higher than the average score for that kind of animal.", "description":"A greater increase is not within the natural range for the animal, and thus cannot be effected by Creo magic." }      ],
+        "75": [
+
+  { "form": "Animal", "technique": "Creo", "level": 75, "name":"Raise an animal from the dead.", "description":"null" }      ]
+    },     "Intellego": {
+        "1": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 1, "name":"Get a mental image of an animal.", "description":"null" }      ],
+        "3": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 3, "name":"Get general information about an animal’s body.", "description":"null" },
+  { "form": "Animal", "technique": "Intellego", "level": 3, "name":"Sense the state of consciousness of a beast.", "description":"null" }      ],
+        "4": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 4, "name":"Learn a specific fact about an animal’s body.", "description":"null" },
+  { "form": "Animal", "technique": "Intellego", "level": 4, "name":"Sense the dominant drive of a beast.", "description":"null" }      ],
+        "5": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 5, "name":"Learn the origin, age, and history of something made of animal products.", "description":"null" }      ],
+        "10": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 10, "name":"Read an animal's surface thoughts.", "description":"null" },
+  { "form": "Animal", "technique": "Intellego", "level": 10, "name":"Speak with an animal.", "description":"null" }      ],
+        "15": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 15, "name":"Read the recent memories of a beast.", "description":"null" }      ],
+        "20": [
+
+  { "form": "Animal", "technique": "Intellego", "level": 20, "name":"Thoroughly probe the mind of a beast.", "description":"null" }      ]
+    },     "Muto": {
+        "1": [
+
+  { "form": "Animal", "technique": "Muto", "level": 1, "name":"Make a superficial change to something made of animal products (like changing its color).", "description":"null" }      ],
+        "2": [
+
+  { "form": "Animal", "technique": "Muto", "level": 2, "name":"Make a major change to something made of animal products that preserves the substance (for example, turn a leather jerkin into a saddle).", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 2, "name":"Make a superficial change to a beast.", "description":"null" }      ],
+        "3": [
+
+  { "form": "Animal", "technique": "Muto", "level": 3, "name":"Change an animal's limb.", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 3, "name":"Change something made of animal products into a different animal product.", "description":"null" }      ],
+        "4": [
+
+  { "form": "Animal", "technique": "Muto", "level": 4, "name":"Change something made of animal products in a minor unnatural way.", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 4, "name":"Make a major change in a beast, while leaving it recognizably the same sort of animal (for example, make a horse bigger and change its color).", "description":"null" }      ],
+        "5": [
+
+  { "form": "Animal", "technique": "Muto", "level": 5, "name":"Change an animal in a minor way so that it is no longer natural (for example, change the color of a horse's coat to match the covenant's coat of arms).", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 5, "name":"Change an animal into a different animal.", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 5, "name":"Change something made of animal products in a major unnatural way.", "description":"null" }      ],
+        "10": [
+
+  { "form": "Animal", "technique": "Muto", "level": 10, "name":"Change an animal into a human (though it retains its animal mentality and does not gain a soul, requires a Corpus requisite).", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 10, "name":"Change an animal into a plant (requires a Herbam requisite).", "description":"null" }      ],
+        "15": [
+
+  { "form": "Animal", "technique": "Muto", "level": 15, "name":"Change an animal in a major unnatural way (for example, give a horse claws, fangs, and scaly armored skin).", "description":"null" },
+  { "form": "Animal", "technique": "Muto", "level": 15, "name":"Change an animal into a non-living item (appropriate requisite required).", "description":"null" }      ],
+        "25": [
+
+  { "form": "Animal", "technique": "Muto", "level": 25, "name":"Radically change an animal in an unnatural way (for example, give a horse wings).", "description":"Give an animal a 'magical' ability, such as the ability to breathe fire (requires a requisite for the ability)." }      ]
+    },     "Perdo": {
+        "2": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 2, "name":"Damage something made of animal products.", "description":"null" }      ],
+        "3": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 3, "name":"Do superficial damage to a beast (for example, remove its hair).", "description":"null" }      ],
+        "4": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 4, "name":"Cause a beast pain, but do no real damage.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 4, "name":"Destroy something made of animal products.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 4, "name":"Make a beast lose one Fatigue level.", "description":"null" }      ],
+        "5": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 5, "name":"Destroy an animal's corpse.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 5, "name":"Inflict a Light Wound.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 5, "name":"Injure an animal so that it is hampered, but not damaged.", "description":"For example, make a horse lame, a bird lose its voice, or weaken the scales of a serpent. This roughly halves the effectiveness of the targeted thing. Recovery as from a Light Wound." }      ],
+        "10": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 10, "name":"Inflict a Medium Wound.", "description":"null" }      ],
+        "15": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 15, "name":"Age a beast by one-twelfth of its natural lifespan.", "description":"Only affects beasts that have already reached maturity." },
+  { "form": "Animal", "technique": "Perdo", "level": 15, "name":"Cripple a beast's limb, so that it is unusable but could heal.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 15, "name":"Destroy one of a beast's minor senses.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 15, "name":"Inflict a Heavy Wound.", "description":"null" }      ],
+        "20": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 20, "name":"Destroy one of a beast's major senses.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 20, "name":"Destroy or sever a beast's limb, so that it cannot naturally regain it.", "description":"null" },
+  { "form": "Animal", "technique": "Perdo", "level": 20, "name":"Inflict an Incapacitating Wound.", "description":"null" }      ],
+        "30": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 30, "name":"Kill an animal.", "description":"null" }      ],
+        "40": [
+
+  { "form": "Animal", "technique": "Perdo", "level": 40, "name":"Destroy one property of an animal, such as its weight or aggression.", "description":"null" }      ]
+    },     "Rego": {
+        "1": [
+
+  { "form": "Animal", "technique": "Rego", "level": 1, "name":"Manipulate items made from animal products.", "description":"null" }      ],
+        "2": [
+
+  { "form": "Animal", "technique": "Rego", "level": 2, "name":"Plant a single suggestion in the mind of an animal.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 2, "name":"Protect the target from animal attacks (only affects animals without supernatural abilities).", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 2, "name":"Treat items made of animal products.", "description":"null" }      ],
+        "3": [
+
+  { "form": "Animal", "technique": "Rego", "level": 3, "name":"Treat and process items made of animal products.", "description":"null" }      ],
+        "4": [
+
+  { "form": "Animal", "technique": "Rego", "level": 4, "name":"Calm an animal.", "description":"null" }      ],
+        "5": [
+
+  { "form": "Animal", "technique": "Rego", "level": 5, "name":"Cause vermin to spontaneously generate in appropriate matter, such as flesh, plants, soil, or water.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 5, "name":"Control a disembodied spirit associated with Animal.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 5, "name":"Manipulate an animal's emotions.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 5, "name":"Paralyze an animal.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 5, "name":"Ward against animals or objects made from animal products.", "description":"(Touch, Ring, Circle)" }      ],
+        "10": [
+
+  { "form": "Animal", "technique": "Rego", "level": 10, "name":"Make an animal completely passive.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 10, "name":"Transport an animal instantly up to 5 paces.", "description":"Non-living animal products are transported with Rego Terram. Add 1 magnitude to increase the distance to 50 paces, 2 magnitudes for 500 paces, 3 magnitudes for 1 league, 4 magnitudes for seven leagues, and 5 magnitudes to a place for which you have an Arcane Connection." }      ],
+        "15": [
+
+  { "form": "Animal", "technique": "Rego", "level": 15, "name":"Completely control an animal.", "description":"null" },
+  { "form": "Animal", "technique": "Rego", "level": 15, "name":"Summon a disembodied spirit associated with Animal.", "description":"null" }      ]
+    }
+  },  "Aquam": {
+     "Creo": {
+        "General": [
+
+  { "form": "Aquam", "technique": "Creo", "level": "General", "name":"Create a corrosive substance doing +(Level) damage.", "description":"Increasing the range to more than Touch is a very good idea." }      ],
+        "2": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 2, "name":"Fill a container with water (or some other natural liquid, with appropriate requisites).", "description":"null" }      ],
+        "3": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 3, "name":"Create ice in a natural shape, such as a floe or icicle.", "description":"null" },
+  { "form": "Aquam", "technique": "Creo", "level": 3, "name":"Create water (or some other natural liquid) that is not contained (for example, spread over a surface).", "description":"null" }      ],
+        "4": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 4, "name":"Create a spring with a low rate of flow.", "description":"null" },
+  { "form": "Aquam", "technique": "Creo", "level": 4, "name":"Create water (or some other natural liquid) in an unnatural shape (for example, in a sphere over someone's head) — but water so created will behave normally.", "description":"null" }      ],
+        "5": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 5, "name":"Create a poison that causes a Light Wound.", "description":"null" },
+  { "form": "Aquam", "technique": "Creo", "level": 5, "name":"Create a spring with a high rate of flow.", "description":"null" }      ],
+        "10": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 10, "name":"Create a geyser with a very high rate of flow.", "description":"null" },
+  { "form": "Aquam", "technique": "Creo", "level": 10, "name":"Create poison that causes a Medium Wound.", "description":"null" }      ],
+        "15": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 15, "name":"Create poison that causes a Heavy Wound.", "description":"null" }      ],
+        "20": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 20, "name":"Create a poison that causes an Incapacitating Wound.", "description":"null" }      ],
+        "25": [
+
+  { "form": "Aquam", "technique": "Creo", "level": 25, "name":"Create a poison that causes a Fatal Wound.", "description":"null" },
+  { "form": "Aquam", "technique": "Creo", "level": 25, "name":"Create a water elemental from a base amount of elemental material.", "description":"(Ritual)" }      ]
+    },     "Intellego": {
+        "1": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 1, "name":"Make a sense unaffected by water.", "description":"null" }      ],
+        "2": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 2, "name":"Get an image of water within range.", "description":"null" }      ],
+        "3": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 3, "name":"Get an image of water and its immediate surroundings within range.", "description":"null" },
+  { "form": "Aquam", "technique": "Intellego", "level": 3, "name":"Learn the natural properties of a liquid.", "description":"null" }      ],
+        "4": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 4, "name":"Learn the natural properties of a mixture of liquids.", "description":"null" }      ],
+        "5": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 5, "name":"Learn the magical properties of a liquid.", "description":"null" }      ],
+        "10": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 10, "name":"Learn the magical properties of a mixture of liquids.", "description":"null" }      ],
+        "15": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 15, "name":"Speak with a natural body of water.", "description":"null" }      ],
+        "20": [
+
+  { "form": "Aquam", "technique": "Intellego", "level": 20, "name":"Speak with an artificial body of water (like a fountain).", "description":"null" }      ]
+    }
+  }
+}
