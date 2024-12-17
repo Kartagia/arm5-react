@@ -7,15 +7,34 @@
  */
 
 /**
+ * The constant of the general level.
+ */
+export const GENERAL_LEVEL = "General";
+
+/**
+ * The level type of the spells.
+ * @typedef {GENERAL_LEVEL|number} LevelType
+ */
+
+/**
+ * A reference to a book or a page of a book.
+ * 
+ * @typedef {Object} bookref
+ * @property {string} bookRef The reference to the book.
+ * @property {number} [pageRef] The page of the book.
+ */
+
+/**
  * A guideline objec.t
  * @typedef {Object} SpellGuideline
- * @property {number|"Generic"} level The level of the guideline.
+ * @property {LevelType} level The level of the guideline.
  * @property {string} name The name of the guideline.
  * @property {string} [description] The description of the guideline.
  * @property {string} technique The technique of the guideline.
  * @property {string} form The form of the guideline.
- * @property {bookref} [ref] The reference of the 
+ * @property {bookref} [ref] The reference of the book containing the guideline. 
  */
+
 
 /**
  * Parse guidelines from the given stream.
@@ -26,6 +45,7 @@
  * promise.
  */
 export async function parseGuidelines(readStream) {
+    const generalGroup = "general";
     const levelGroup = "level";
     const techGroup = "techinique";
     const formGroup = "form";
@@ -37,8 +57,8 @@ export async function parseGuidelines(readStream) {
     const artDelimiterRe = new RegExp("^\s*$", "u");
     const artStartRe = new RegExp("^\s*(?<" + techGroup + ">\\p{Lu}\\p{Ll}+)\s+(?<" + formGroup + ">\\p{Lu}\\p{Ll}+)\s*$", "u");
     const bookRefRe = new RegExp("^\\[Ref:\\s+(?<" + bookRefGroup + ">)(?:\\s+[Pp]g\\.?(?<" + pageRefGroup + ">\\d+))?\\s*\\]\\s*$");
-    const guidelineRef = new RegExp("^(?:Level\\s+(?<" + levelGroup + ">Generic|\\d+):\\s)\\s*(?<" + nameGroup +
-        ">[^.+?]\\.)(?:\\s*(?<" + descGroup + ">.*?))?\\s*$", "u");
+    const guidelineRef = new RegExp("^(?:(?<" + generalGroup + ">" + GENERAL_LEVEL + ")|(?:Level\\s+(?<" + levelGroup + ">\\d+)):\\s)\\s*(?<" + nameGroup +
+        ">[^.]+?\\.)(?:\\s*(?<" + descGroup + ">.*?))?\\s*$", "u");
     let current = { form: undefined, tech: undefined, level: undefined };
     let line = 1;
     let reader = readStream.getReader();
@@ -100,7 +120,45 @@ export async function parseGuidelines(readStream) {
 }
 
 /**
- * Parse guidelines.
+ * Fetch spell guidelines from a JSON source.
+ * 
+ * @param {URL|string} url The source url of the guidelines.
+ * @returns {Promise<SpellGuideline[]>} The list of read spell guidelines.
+ * @throws {Error} The fetching of the source failed. The error is returned
+ * as reject value instead of throwing.
+ */
+export async function fetchJsonGuidelines(url) {
+
+    return fetch("./guidelines.json").then(
+        (response) => {
+            if (response.ok) {
+                // Getting the JSON result.
+                return response.json();
+            } else {
+                // The operation failed.
+                throw new Error(`Response status: ${response.status}`);
+            }
+        }
+    ).then(
+        (guidelines) => {
+            // Test wheteher we have tree or list of guidelines.
+            if (Array.isArray(guidelines)) {
+                // We got list version.
+                return guidelines;
+            } else {
+                // Flattening the tree model.
+                return Object.getOwnPropertyNames(guidelines).reduce((result, form) => (Object.getOwnPropertyNames(guidelines[form]).reduce(
+                    (list, tech) => {
+                        return Object.getOwnPropertyNames(guidelines[form][tech]).reduce((values, level) => {
+                            return [...values, ...(guidelines[form][tech][level])]
+                        }, list)
+                    }, result)), [])
+            }
+        });
+}
+
+/**
+ * Parse text guidelines.
  * 
  * @param {URL} url The source url of the parsed guidelines. 
  * @returns {Promise<SpellGuideline[]>} The promise of the read guidelines.
@@ -108,7 +166,7 @@ export async function parseGuidelines(readStream) {
  * promise.
  */
 export function fetchGuidelines(url) {
-    return new Promise( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         fetch(url).then(
             (result) => {
                 if (result.ok) {
@@ -120,7 +178,7 @@ export function fetchGuidelines(url) {
             (error) => {
                 reject(error);
             }
-        );    
+        );
     });
 }
 

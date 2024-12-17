@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Select, Input, InputLabel, MenuItem, FormControl } from '@material-ui/core';
-import { fetchGuidelines } from './modules.spellguidelines';
+import { Select, Input, InputLabel, MenuItem, FormControl, Typography } from '@material-ui/core';
+import { fetchGuidelines, GENERAL_LEVEL } from './modules.spellguidelines';
 
 /**
  * The properties of a spell.
@@ -98,6 +98,224 @@ function getId() {
 }
 
 /**
+ * A magnitude modifier modifies a level by magnitude.
+ * @typedef {Object} MagnitudeModifier
+ * @property {string} name The name of the modifier.
+ * @property {number} magnitude The magnitude modifier amount.
+ */
+
+/**
+ * An interface of stringifiable values.
+ * @typedef {Object} Stringifiable
+ * @property {() => string} toString Convert the value to the string.
+ */
+
+/**
+ * Create a new magnitude modifier.
+ * @param {string|Stringifiable} name The name of the modifier.
+ * @param {number|string} [amount=0] The modification amount. 
+ * @returns {MagnitudeModifier} The created magnitude modifier.
+ * @throws {SyntaxError} The name was invalid.
+ * @throws {SyntaxError} The amount was invalid.
+ */
+export function magnitudeMod(name, amount = 0) {
+    const magnitude = typeof amount === "string" ? Number.parseInt(amount) : amount;
+    if (!Number.isSafeInteger(magnitude)) {
+        throw new SyntaxError("Invalid magnitude modifier amount " + amount);
+    }
+    if (!(typeof name == "string" || (typeof name === "object" && name != null && "toString" in name && typeof name.toString === "function"))) {
+        throw new SyntaxError("Invalid magnitude modifier name");
+    }
+
+    /**
+     * @type {MagnitudeModifier}
+     */
+    const result = {
+        name: typeof name === "object" ? name.toString() : name,
+        magnitude
+    };
+    return result;
+}
+
+export function magnitudeModToString(mod) {
+    return `${mod.magnitude} (${mod.name})`;
+}
+
+/**
+ * A spell model.
+ * @typedef {Object} SpellModel
+ * @property {import('./modules.spellguidelines').LevelType} [baseLevel] The base level of the spell.
+ * @property {import("module.spellguidelines.js").SpellGuideline} guideline The guideline of the spell.
+ * @property {string} [form] The form of the spell.
+ * @property {string} [technique] The technique of the spell.
+ * @property {import('./modules.spellguidelines').LevelType} [level] The actual level of the spell.
+ * @property {string|string[]|MagnitudeModifier} [range] The range of the spell.
+ * @property {string|string[]|MagnitudeModifier} [duration] The duration of the spell.
+ * @property {string|string[]|MagnitudeModifier} [target] The target of the spell.
+ * @property {number} [size=0] The size of the spell target.
+ * @property {MagnitudeModifier[]} [modifiers=[]] The other modifiers of the spell.
+ * @property {string|import('react').ReactElement} [description] The description of the spell.
+ */
+
+const ranges = {
+    "Personal": magnitudeMod("Personal", 0),
+    "Touch": magnitudeMod("Touch", 1),
+    "Eye": magnitudeMod("Eye", 1),
+    "Voice": magnitudeMod("Voice", 2),
+    "Sight": magnitudeMod("Sight", 3),
+    "Arcane Connection": magnitudeMod("Arcane Connection", 4)
+};
+const durations = {
+    "Momentary": magnitudeMod("Momentary"),
+    "Concentration": magnitudeMod("Conentration", 1),
+    "Diameter": magnitudeMod("Diameter", 1),
+    "Sun": magnitudeMod("Sun", 2),
+    "Ring": magnitudeMod("Ring", 2),
+    "Month": magnitudeMod("Month", 3),
+    "Year": magnitudeMod("Year", 4)
+};
+const targets = {
+    "Individual": magnitudeMod("Individual"),
+    "Part": magnitudeMod("Part", 1),
+    "Group": magnitudeMod("Group", 2),
+    "Room": magnitudeMod("Room", 2),
+    "Struture": magnitudeMod("Structure", 3),
+    "Boundary": magnitudeMod("Boundary", 4)
+};
+
+/**
+ * Convert magnitude modifiers into modifiers.
+ * @param {number|string|string[]|MagnitudeModifier} rdt The rdt value.
+ * @returns {Array<MagnitudeModifier|Stringifiable>} The magnitude modifier or stringifiable lisst
+ * of the rdt.
+ */
+export function rdtMagnitudeMod(rdt) {
+    switch (typeof rdt) {
+        case "string":
+            if (rdt in ranges) {
+                return [ranges[rdt]];
+            } else if (rdt in durations) {
+                return [durations[rdt]];
+            } else if (rdt in targets) {
+                return [targets[rdt]];
+            } else {
+                // Unknown rdt.
+                return [magnitudeMod(rdt)];
+            }
+        case "number":
+            return [magnitudeMod("Size", rdt)];
+        case "object":
+            if (rdt != null) {
+                if (Array.isArray(rdt)) {
+                    return rdt.map(val => (rdtMagnitudeMod(val)));
+                } else {
+                    return [rdt];
+                }
+            }
+        default:
+            return [];
+    }
+}
+
+/**
+ * Create a spell summary component.
+ * @param {Object} props The spell summary props.
+ * @param {SpellModel} props.model The spell model. 
+ */
+export function SpellSummary(props) {
+    const model = props.model;
+    /**
+     * @type {Array<MagnitudeModifier|Stringifiable>}
+     */
+    const mods = [];
+    const baseLevel = (model.baseLevel == null ? (model.guideline || { level: GENERAL_LEVEL }).level : model.baseLevel);
+    if (baseLevel !== GENERAL_LEVEL) {
+        mods.push(magnitudeMod("base", baseLevel));
+    }
+    const rdtToMods = (rdt) => {
+        if (Array.isArray(rdt)) {
+            return rdt.reduce((result, value) => (rdtToMods(rdt)), []);
+        } else if (typeof rdt === "object") {
+            if (rdt != null) {
+                return [ Object.hasOwnProperty(rdt, "toString") ? rdt.toString() : magnitudeModToString(rdt)];
+            } else {
+                return [];
+            }
+        } else if (typeof rdt === "number") {
+            // Size modifier.
+            return [magnitudeModToString(magnitudeMod("Size", rdt))];
+        } else {
+            // RDT name.
+            // TODO: add determining the modifier.
+            return [magnitudeModToString(rdtMagnitudeMod(rdt))];
+        }
+    }
+    mods.push(
+        ...[props.range, props.duration, props.target, props.size].reduce(
+            (result, rdt) => {
+                const modifiers = rdtMagnitudeMod(rdt);
+                if (modifiers.length > 0) {
+                    result.push(...modifiers.map( val => ("toString" in val ? val.toString() : magnitudeModToString(val))));
+                }
+                return result;
+            }, []));
+    mods.push(...(model.modifiers || []).reduce( 
+        (result, mod) => {
+            result.push(magnitudeModToString(mod));
+            return result;
+        }, []
+    ));
+    console.table(mods);
+    console.table(mods.map( value => ("toString" in value ? value.toString() : magnitudeModToString(value))))
+    return (<div className={props.className}>Summary
+        ({baseLevel === GENERAL_LEVEL ? `Level${mods.length > 0 ? " - " + mods.map(
+            value => ("toString" in value ? value.toString() : magnitudeModToString(value))
+        ).join(" - ") : ""}` : `${mods.map(
+            value => ("toString" in value ? value.toString() : magnitudeModToString(value))
+        ).join(" + ")}`})
+    </div>)
+}
+
+/**
+ * @typedef {Object} SpellEditorProps
+ * @property {SpellModel} model The spell model. 
+ * @property {boolean} [disabled=false] Is the editor disabled.
+ * @porperty  
+ */
+
+/**
+ * 
+ * @param {SpellEditorProps} props 
+ */
+export function SpellEditor(props) {
+    const [spell, setSpell] = useState(props.model ? props.model : {});
+
+    const setSpellName = (newName) => {
+        setSpell(spell => ({ ...spell, name: newName }));
+    }
+    const setSpellLevel = (newLevel) => {
+        setSpell(spell => ({ ...spell, level: newLevel }));
+    }
+
+    if (props.readonly) {
+        return (<div className={props.className}></div>);
+    } else {
+        return (<Container>
+            <FormControl disabled={props.disabled}>
+                <InputLabel>{ }</InputLabel>
+                <Input type={text} name={"name"} placeholder={spellnamePlacehodler} defaultValue={spell.name} onChange={
+                    (event) => (setSpellName(event.target.value))
+                }></Input>
+            </FormControl>
+            <FormControl disabled={props.disabled}>
+
+            </FormControl>
+            <SpellSummary model={spell} />
+        </Container>);
+    }
+}
+
+/**
  * Create a spell list component.
  * 
  * @param {SpellListProps} props 
@@ -140,9 +358,9 @@ export default function Spells(props) {
     const filterGuidelines = (formFilter = undefined, techFilter = undefined, guidelines = []) => {
         return guidelines.filter(
             guideline => (
-            ( (formFilter == null || formFilter === "All" || guideline.form === formFilter) &&
-            (techFilter == null || techFilter === "All" || guideline.techninique === guideline.technique))
-        )
+                ((formFilter == null || formFilter === "All" || guideline.form === formFilter) &&
+                    (techFilter == null || techFilter === "All" || guideline.techninique === guideline.technique))
+            )
         );
     };
 
@@ -169,14 +387,16 @@ export default function Spells(props) {
                     onChange={(event, child = undefined) => {
                         if (event.target.value == "none") {
                             setNewSpell(current => (Object.getOwnPropertyNames(current).filter((prop) => (prop != "guideline")).reduce(
-                                (result, prop) => ({...result, [prop]: current[prop]}), {}
+                                (result, prop) => ({ ...result, [prop]: current[prop] }), {}
                             )));
                             setDisableTechSelector(false);
                             setDisableFormSelector(false);
                         } else {
                             const [tech, form, level, name] = event.target.value.split(".");
                             alert(`Changing spell form to ${form}\nChanging spell tech to ${tech}\nChanging spell level to ${level}\n`);
-                            setNewSpell(current => ({ ...current, guideline: event.target.value, technique: tech, form, baseLevel: level }));
+                            setNewSpell(current => ({ ...current, guideline: event.target.value, technique: tech, form, baseLevel: level, 
+                                range: ranges.Personal, duration: durations.Momentary, target: targets.Individual, size: 0
+                             }));
                             setTechFilter(tech);
                             setFormFilter(form);
                             setDisableTechSelector(true);
@@ -186,11 +406,19 @@ export default function Spells(props) {
                     labelId={guidelineLabelId} name="guideline" value={(newSpell.guideline ? newSpell.guideline : "none")}
                     id={guidelineId}>
                     <MenuItem key="none" value="none"><i>(Select guideline)</i></MenuItem>
-                    {guidelines.filter( guideline => (
+                    {guidelines.filter(guideline => (
                         (techFilter === "All" || techFilter === guideline.technique) && (formFilter === "All" || formFilter === guideline.form)
                     )).map(item => (<MenuItem key={keyFunc(item)} value={valueFunc(item)}>{captionFunc(item)}</MenuItem>))}
                 </Select>
             </FormControl>
+            <Typography>{newSpell.technique} {newSpell.form} {newSpell.level || newSpell.baseLevel}</Typography>
+            <Typography>R: {newSpell.range && newSpell.range.name} , D: {newSpell.duration && newSpell.duration.name}, T: {newSpell.target && newSpell.target.name}{
+                (newSpell.size != null? `(+${newSpell.size})` : "")}</Typography>
+            <FormControl>
+                <InputLabel id="descriptionLabel">Desription</InputLabel>
+                <Input className="element" id="" name="description" placeholder="Enter spell description here"></Input>
+            </FormControl>
+            <SpellSummary model={newSpell} />
         </footer>
     </div>)
 }
