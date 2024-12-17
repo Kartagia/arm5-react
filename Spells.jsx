@@ -255,7 +255,7 @@ export function SpellSummary(props) {
             (result, rdt) => {
                 const modifiers = rdtMagnitudeMod(rdt);
                 if (modifiers.length > 0) {
-                    result.push(...modifiers.map( val => ("toString" in val ? val.toString() : magnitudeModToString(val))));
+                    result.push(...modifiers.map( val => (Object.getOwnPropertyNames(val).includes("toString") ? val.toString() : magnitudeModToString(val))));
                 }
                 return result;
             }, []));
@@ -266,12 +266,12 @@ export function SpellSummary(props) {
         }, []
     ));
     console.table(mods);
-    console.table(mods.map( value => ("toString" in value ? value.toString() : magnitudeModToString(value))))
+    console.table(mods.map( value => (Object.getOwnPropertyNames(value).includes("toString") ? value.toString() : magnitudeModToString(value))))
     return (<div className={props.className}>Summary
         ({baseLevel === GENERAL_LEVEL ? `Level${mods.length > 0 ? " - " + mods.map(
-            value => ("toString" in value ? value.toString() : magnitudeModToString(value))
+            value => (Object.getOwnPropertyNames(value).includes("toString") ? value.toString() : magnitudeModToString(value))
         ).join(" - ") : ""}` : `${mods.map(
-            value => ("toString" in value ? value.toString() : magnitudeModToString(value))
+            value => (Object.getOwnPropertyNames(value).includes("toString") ? value.toString() : magnitudeModToString(value))
         ).join(" + ")}`})
     </div>)
 }
