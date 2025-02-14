@@ -318,7 +318,7 @@ export class DayOfMonth {
  * @returns The regular expresion string with capturing groups "year" and "era"
  * storing the year and era matched in the patterm.
  */
-export function createYearRegex(max = null, min = 1, eras = Era.values, requireEra = false) {
+export function createYearRegex(max = null, min = 1, eras = Eras.values, requireEra = false) {
   return `(?<year>\\d{${min},${max == null ? "" : max}})(?<era>${eras.reduce(
     (result, era) => ((result ? "|" : "") + era.toString()), "")
     }${requireEra ? "" : "?"}`;
@@ -793,10 +793,6 @@ export class JulianDayOfYear {
   toDate() {
     return new Date(this.toEpochMilliseconds());
   }
-
-}
-
-export class JulianMonthOfYear {
 
 }
 

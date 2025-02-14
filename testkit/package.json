@@ -1,0 +1,43 @@
+{
+  "name": "arm5react-testkit",
+  "version": "1.0.0",
+  "description": "Testing kit for the Ars Magica Campaign Assitant GUI for React.",
+  "main": "src/server.mjs",
+  "devDependencies": {
+    "chai": "^5.1.2",
+    "chai-as-promised": "^8.0.1",
+    "css-loader": "^7.1.2",
+    "csv-loader": "^3.0.5",
+    "express": "^5.0.1",
+    "mocha": "^10.8.2",
+    "nodemon": "^3.1.9",
+    "style-loader": "^4.0.0",
+    "util": "^0.12.5",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "xml-loader": "^1.2.1"
+  },
+  "scripts": {
+    "test": "mocha --harmony",
+    "build": "webpack --config src/prod.webpack.config.js",
+    "compile": "webpack --config src/dev.webpack.config.js",
+    "dev": "nodemon"
+  },
+  "keywords": [
+    "mocha",
+    "chai",
+    "test",
+    "ArsMagica"
+  ],
+  "author": "Antti Kautiainen <antti@kautiainen.com>",
+  "license": "MIT",
+  "dependencies": {
+    "browser": "^0.2.6"
+  },
+  "nodemoConfig": {
+    "watch": [
+      "src/**",
+      "../**"
+    ]
+  }
+}

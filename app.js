@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Covenant from './Covenant.jsx';
-import History from './History.jsx';
 import {getCovenants} from './modules.covenants.js';
+import Action from './Action.jsx';
+import ActionUser from './ActionUser.jsx';
 
 
 
@@ -46,6 +47,7 @@ class Main extends React.Component {
               }
             )
           }
+          {this.props.children}
       </div>
     )
   }
@@ -53,6 +55,9 @@ class Main extends React.Component {
 
 
 ReactDOM.render(
-  <Main title="React" text="Caution: do not look into laser with remaining eye."></Main>,
+  <Main title="React" text="Caution: do not look into laser with remaining eye.">
+    <Action name="alert" caption="Alert" onClick={() => {alert("ALERT! ALERT! ALERT!")}}></Action>
+    <ActionUser items={[{ name: "Test1"}, { name: "Test2"}]} actions={["Remove", "Add"].map( name => (<Action key={name} horizontal={true} name={name} onClick={ (e) => {alert(`Action ${name} not implemented`)}} />))} />
+  </Main>, 
   document.getElementById('react-app')
 );
