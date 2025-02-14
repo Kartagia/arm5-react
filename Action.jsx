@@ -26,7 +26,7 @@ import React from 'react';
 /**
  * An action component represenst an aciton.
  * @template [TYPE=undefined] The type of the action value.
- * @param {ActionProps} props The action properties.
+ * @param {ActionProps<TYPE>} props The action properties.
  */
 export default function Action(props) {
 
