@@ -18,6 +18,9 @@ import React from 'react';
  * @property {boolean} [disabled=false] Is the action disabled.
  * @property {boolean} [readonly=false] Is the component read-only. Read-only disables all modification
  * actions.
+ * @property {string[]|string} [className] The classnames of the component. 
+ * @property {Record<string, string|string[]>} [styles] The record from style propoerty entry to the classname or classnames
+ * of that style class names.
  */
 
 /**
@@ -45,10 +48,27 @@ export default function Action(props) {
             }
         }
     }
+    const classNames = (typeof props.className === "string" ? props.className.split(/\s+/) : props.className || []);
+    if (props.styles) {
+        ["diabled", "readonly", "horizontal"].forEach( propName => {
+            if (propName in props && props[propName] && propName in props.styles) {
+                const addedClasses = typeof props.styles[propName] === "string" ? props.styles[propName].split(/\s+/) : props.styles[propName];
+                addedClasses.forEach( addedClass => {
+                    if (!addedClass in classNames) {
+                        classNames.push(addedClass);
+                    }
+                });
+            }
+     
+        })
+    }
 
     if (props.horizontal) {
-        return props.imgSrc ? <img src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> : <span onClick={handleClick}>[{props.caption || props.name}]</span>
+        return props.imgSrc ? <img className={(classNames.join(" "))} src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> : 
+        <span className={(classNames.join(" "))} onClick={handleClick}>[{props.caption || props.name}]</span>
     } else {
-        return <div>{props.imgSrc ? <img src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> : <span onClick={handleClick}>[{props.caption || props.name}]</span>}</div>
+        return <di className={(classNames.join(" "))}v>{props.imgSrc ?
+        <img className={(classNames.join(" "))} src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> :
+        <span className={(classNames.join(" "))} onClick={handleClick}>[{props.caption || props.name}]</span>}</di>
     }
 }
