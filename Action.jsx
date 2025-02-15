@@ -51,6 +51,7 @@ export default function Action(props) {
         }
     }
     const classNames = (typeof props.className === "string" ? props.className.split(/\s+/) : props.className || []);
+    classNames.push("action");
     if (props.styles) {
         ["diabled", "readonly", "horizontal"].forEach( propName => {
             if (propName in props) {
@@ -67,7 +68,9 @@ export default function Action(props) {
         })
     }
 
-    if (props.horizontal) {
+    if (props.button) {
+        return <button type="button" className={classNames.join(" ")} onClick={handleClick} name={props.name} >(props.imgSrc?<img src={props.imgSrc}/>:{props.caption || props.name})</button>
+    } else if (props.horizontal) {
         return props.imgSrc ? <img className={(classNames.join(" "))} src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> : 
         <span className={(classNames.join(" "))} onClick={handleClick}>[{props.caption || props.name}]</span>
     } else {
