@@ -1,4 +1,5 @@
 
+import { log } from 'console';
 import React from 'react';
 
 
@@ -46,12 +47,16 @@ export default function Action(props) {
                 }
 
             }
+        } else {
         }
     }
     const classNames = (typeof props.className === "string" ? props.className.split(/\s+/) : props.className || []);
+    classNames.push("action");
     if (props.styles) {
         ["diabled", "readonly", "horizontal"].forEach( propName => {
-            if (propName in props && props[propName] && propName in props.styles) {
+            if (propName in props) {
+            }
+            if (propName in props && typeof props[propName] === "boolean" && propName in props.styles) {
                 const addedClasses = typeof props.styles[propName] === "string" ? props.styles[propName].split(/\s+/) : props.styles[propName];
                 addedClasses.forEach( addedClass => {
                     if (!addedClass in classNames) {
@@ -63,12 +68,14 @@ export default function Action(props) {
         })
     }
 
-    if (props.horizontal) {
+    if (props.button) {
+        return <button type="button" className={classNames.join(" ")} onClick={handleClick} name={props.name} >(props.imgSrc?<img src={props.imgSrc}/>:{props.caption || props.name})</button>
+    } else if (props.horizontal) {
         return props.imgSrc ? <img className={(classNames.join(" "))} src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> : 
         <span className={(classNames.join(" "))} onClick={handleClick}>[{props.caption || props.name}]</span>
     } else {
-        return <di className={(classNames.join(" "))}v>{props.imgSrc ?
+        return <div className={(classNames.join(" "))}v>{props.imgSrc ?
         <img className={(classNames.join(" "))} src={props.imgSrc} alt={props.caption || props.name} onClick={handleClick} /> :
-        <span className={(classNames.join(" "))} onClick={handleClick}>[{props.caption || props.name}]</span>}</di>
+        <span className={(classNames.join(" "))} onClick={handleClick}>[{props.caption || props.name}]</span>}</div>
     }
 }
