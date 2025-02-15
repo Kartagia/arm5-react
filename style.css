@@ -9,12 +9,20 @@ html {
     background-color: #808080
 }
 
+.primary:disabled {
+    color: #000040;
+    background-color: #606060;
+}
+
 .secondary {
     color: #000060;
     background-color: #a9a9a9;
 }
 
-
+.secondary:disabled {
+    color: #000020;
+    background-color: #a9a9a9;
+}
 
 body {
     color: #c9c9c9;
