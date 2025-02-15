@@ -34,7 +34,7 @@ const app = express();
 const options = {
     dotfiles: 'ignore',
     etag: false,
-    extensions: ['html', 'htm', 'css', 'js', 'mjs'],
+    extensions: ['html', 'htm', 'css', 'js', 'mjs', 'css'],
     index: false,
     rediret: false,
     setHeaders (res, path, stat) {
