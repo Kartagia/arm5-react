@@ -1,22 +1,22 @@
 html {
 
-    background-color: "#000080";
-    color: "#a9a9a9a";
+    background-color: #000080;
+    color: #a9a9a9;
 }
 
 .primary {
-    color: "#000080";
-    background-color: "#808080"
+    color: #000080;
+    background-color: #808080
 }
 
 .secondary {
-    color: "#000060";
-    background-color: "a9a9a9";
+    color: #000060;
+    background-color: #a9a9a9;
 }
 
 
 
 body {
-    color: "#c9c9c9";
-    background-color: "#000080";
+    color: #c9c9c9;
+    background-color: #000080;
 }
